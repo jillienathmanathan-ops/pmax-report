@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PMax WoW — Simba</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--black:#000;--charcoal:#302F38;--slate:#6A697C;--pink:#FF7AAC;--pink-light:#FFCDE6;--blue:#2885FD;--yellow:#FFE03D;--teal:#3DDABE;--coral:#FF6B6B;--white:#fff;--bg:#F7F7F8;--surface:#fff;--surface2:#F2F2F5;--border:#E4E4EA;--border2:#D0D0DA;--text:#000;--text-muted:#302F38;--text-dim:#6A697C;--positive:#1DB87A;--negative:#E53935}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Figtree',sans-serif;font-size:14px;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--white);border-bottom:1px solid var(--border);padding:0 32px;height:58px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.logo-wrap{display:flex;align-items:center}
+.header-divider{width:1px;height:24px;background:var(--border2)}
+.header-title{font-size:13px;font-weight:500;color:var(--text-muted)}
+.header-badge{margin-left:auto;background:rgba(255,122,172,.1);border:1px solid rgba(255,122,172,.3);color:var(--pink);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:20px}
+.header-refresh{font-size:11px;color:var(--text-dim);margin-left:12px}
+.tabs-container{background:var(--white);border-bottom:2px solid var(--border);padding:0 28px;display:flex;gap:2px}
+.tab-btn{padding:14px 22px;background:none;border:none;color:var(--text-muted);font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--pink);border-bottom-color:var(--pink)}
+.tab-content{display:none}.tab-content.active{display:block}
+.page-body{max-width:1200px;margin:0 auto;padding:28px 32px 80px}
+.exec-summary{background:var(--white);border:1px solid var(--border);border-left:4px solid var(--pink);border-radius:8px;padding:18px 22px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.exec-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--pink);margin-bottom:10px}
+.exec-summary ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:6px}
+.exec-summary li{font-size:13px;color:var(--text-muted);line-height:1.55;padding-left:16px;position:relative}
+.exec-summary li::before{content:"•";position:absolute;left:0;color:var(--pink);font-weight:700}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.kpi-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:800;color:var(--text);line-height:1;margin-bottom:6px}
+.kpi-delta{font-size:11px;font-weight:600}
+.kpi-delta.positive{color:var(--positive)}.kpi-delta.negative{color:var(--negative)}.kpi-delta.neutral{color:var(--text-muted)}
+.kpi-card.breach .kpi-value{color:var(--negative)}.kpi-card.warn .kpi-value{color:#D97706}.kpi-card.ok .kpi-value{color:var(--positive)}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:14px;margin-top:28px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:18px 18px 12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.chart-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:14px}
+.chart-wrapper{position:relative;height:260px}
+.chart-wrapper.tall{height:300px}
+.wow-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:24px}
+.wow-table thead th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);padding:7px 10px;border-bottom:1.5px solid var(--border);text-align:right;white-space:nowrap}
+.wow-table thead th:first-child{text-align:left}
+.wow-table tbody td{padding:7px 10px;border-bottom:.5px solid var(--border);text-align:right;vertical-align:middle}
+.wow-table tbody td:first-child{text-align:left}
+.wow-table tbody tr:last-child td{border-bottom:none}
+.wow-table tbody tr:hover td{background:var(--bg)}
+.cname{font-weight:600;font-size:12px}.cname small{display:block;font-size:10px;color:var(--text-dim);font-weight:400;margin-top:1px;font-family:monospace}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:12px;white-space:nowrap}
+.p-red{background:#fee2e2;color:#991b1b}.p-grn{background:#dcfce7;color:#14532d}.p-neu{color:var(--text-dim);font-weight:500;font-size:11px}
+.roi-pill-red{background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700}
+.roi-pill-amb{background:#fef9c3;color:#713f12;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700}
+.roi-pill-grn{background:#dcfce7;color:#14532d;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700}
+.nce-tag{display:inline-block;font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.analysis-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.analysis-card.obs{border-left:4px solid var(--teal)}.analysis-card.fup{border-left:4px solid var(--coral)}
+.analysis-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px}
+.analysis-card.obs .analysis-label{color:var(--teal)}.analysis-card.fup .analysis-label{color:var(--coral)}
+.analysis-card ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px}
+.analysis-card li{font-size:12.5px;color:var(--text-muted);line-height:1.55;padding-left:16px;position:relative}
+.analysis-card.obs li::before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:700}
+.analysis-card.fup li::before{content:"→";position:absolute;left:0;color:var(--coral);font-weight:700}
+/* tROAS section */
+.troas-section{margin-bottom:24px}
+.troas-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.troas-insight{background:var(--white);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:8px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.troas-insight-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#92400e;margin-bottom:10px}
+.troas-insight ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px}
+.troas-insight li{font-size:12.5px;color:var(--text-muted);line-height:1.55;padding-left:16px;position:relative}
+.troas-insight li::before{content:"⚡";position:absolute;left:0;font-size:10px}
+.caveat{font-size:11px;color:var(--text-dim);margin-top:24px;line-height:1.6;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:8px}
+.country-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;margin-top:32px}
+.cflag{font-size:20px}.country-name{font-size:15px;font-weight:700}.country-divider{flex:1;height:1px;background:var(--border)}
+.footer{max-width:1200px;margin:0 auto;padding:16px 32px 40px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);border-top:.5px solid var(--border)}
+@media(max-width:768px){.kpi-grid{grid-template-columns:1fr 1fr}.chart-grid,.troas-grid,.analysis-grid{grid-template-columns:1fr}.header{padding:0 16px}.tabs-container{padding:0 12px;overflow-x:auto}.tab-btn{padding:12px 14px;font-size:12px;white-space:nowrap}.page-body{padding:20px 16px 60px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo-wrap">
+    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/wAARCABkAGQDASIAAhEBAxEB/8QAGwABAAMBAQEBAAAAAAAAAAAAAAUHCAYEAgP/xAA/EAABAwIEAwUFBAYLAAAAAAABAAIDBBEFBgchEhNRCBQxQWFGcYGEwxUXMmIWIyRSkaI3QlZjcnWClKGz0f/EABsBAQADAQEBAQAAAAAAAAAAAAABAgUGAwQH/8QAMBEAAgEDAgIHBwUAAAAAAAAAAAECAwQRBTESIQYTQVGBkfAUFTI1cbLhM2GhsdH/2gAMAwEAAhEDEQA/AO+REXqfsYREQBERAEREAREQBERAEREAREQBc9qLmyhyXlWpx2taZOXZkEINjNKfwtB8vAknyAJXQrP/AGx6iVtJlilDv1UklTI4dXNEQB/md/FQ+SPg1S6la2k6sd1t4vBVmZtRs+ZyxPg+0q5jZCRFQ4eXMYB04W7u97rlflgme8/5OxRrRiuJwvjIL6OvL3scOhY/wv1Fj0KufshYVQtyniuN8hhrpK91KZSNxG2ONwaD5Al5J62HRWlnPJ2Xc30HdMdw6OosLRzAcMsX+F43Hu8D5gquO05m20i6uaCulWfG+a3/AL/BxGmmtuXczmOgxjgwXFHbASvHIlP5XnwJ/dd8CVayydqXofmDLfNr8C5mNYY27iGM/aIm/mYPxW6t95ACjtNtYMz5O5dDUOOK4Uw27rUOIdGPyP8AFvuNx6BTnG59dDW61pPqdQjh9/rf6ryNhIuVyBn/AC1nal48GrQKlreKWjms2eMdS2+43G4uN11SsdNSqwrRU6bymEREPQIiIAiIgCz12yvZT5z6C0Ks9dsr2U+c+golsY3SD5fU8PuR0PZF/o2xD/OJf+mFXIsEYNFmDFGjBMIZiVY1zzKKOm43tLrAF/ANr2AubeQUt93OfP7I4z/tXf8AiqpGHYa7Uo28acKLlwrGc/hm4VXWpOkOWM4iSrjiGFYq4E97p2Czz/eM2DvfsfVZemoM8ZKmirZKTHMCdxfq5iySFpPS+wPuWi+z7qfUZyppsExxzDjNJHzBMAGipjvYusNg4Ei9tjcHqpzk0aGq2+oy9muafC3sn6TTKCznkbOGnmKMqqqGaKOOS9PiNI48u99iHDdjvQ2PvV0dn/VyrzDWsytmeRsmIFhNJV2DTPYXLHgbcVtwfO2+/jbua24S7LWIjHeV9md2f3rmW4eC2/j59PWyxhpH3j7z8td1DjJ9pwXt+5xjj/l4lGzM6tRlo15T6iTcZvmvFf7yZuJERXO1CIiAIiIAs9dsr2U+c+gtCrPXbK9lPnPoKJbGN0g+X1PD7kTXZCo6ZmR8VxBsLRVS4k6F8ltyxkUZa33AvcfirrWX9DdVMuZEyRVYbisGIVFXNiL52spomkBhjiaCS5wHi1ytzJmsuScz10dBFVVGHVchDY4q6MM5h6BwJbf0JBKhNHjo9/axtqdHjSljYn9VKKmxDTfMVPVxNkjGHTyAHyexhc1w9Q4A/BY/0xzScm5zpMwd3fUsp2StdA1/DzOKNzQCfIXIPn4LY2pMkcOnmY5JXtY0YXUi5PWJwH/Kxnp3lmXOGcaDL0VQKY1TncUxZxcDWsLibbX2b/EhRLczekXGryi6Xx9n1zyJbPeoObdQK9tLUySd2e+0GG0jTwX8thu93qb+lvBXF2etJ6/L9eM05mhbDWiMto6QkF0PELF77bB1iQB5Am+/hYun2nWWMkwD7KoxLWkWkrZ7Omd1sf6o9G29brrlKXefdYaJKNVXN3Lin/C9eSCIisdGEREAREQBZ67ZXsp859BaFVO9qzLlTi2SaXGKRjpHYRM58rQLnlPADnfAhpPpc+Sh7GVrlOVSwqRj+z8mmU/o1pTV5/jqq+bEBh+GU0nKMoj43ySWBLWi4tYEEk9Rsd7eTWPTWr0+r6T9tFfh9YHcmfl8Dg5tuJrhc2O4sb7/AAUnolqv+gNPV4ZX4fJW4bUy88clwEkclg0kX2IIaNtvBeTWzUx2oNZRR01C6iw6i4jGyRwdJI91rudbYbAAAeu++1OWDjJLTvd6a/V8e/yxghMc1Bzjj2AU2Xa/F5p6CJrIxC1gBl4fw8ZA4n+XiTuAfFXV2Z9NsQwaZ+bsepn0tRLEYqKmkbZ7GutxSOHkSNgDva/UKe7N+SY8DyVDimK4ZA3Fa2U1EcksDedDEQAxvERcXsXW/MrYVku06DSdHk3C7uZOUsck+zuCIisdQEREAREQBERAF8yxslidFKxr43gtc1wuHA+II8wvpEBUuaNAsmYtWvq6CWtwdzzd0VO5rob9Q1wuPcDboF6cmaG5Ny9XR19QKrF6qIh0fey3lMcPAhjQL/6iVaKKMIz1pVmqnWKms+uzYIiKTQCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiA//Z" alt="Preply" style="height:32px;width:auto;border-radius:5px;">
+  </div>
+  <div class="header-divider"></div>
+  <div class="header-title">PMax WoW Performance · Simba · BAU &amp; DEPLIT</div>
+  <div class="header-badge" id="week-badge">W/C 1 – 7 Jun 2026</div>
+  <div class="header-refresh">To refresh: ask Claude "Refresh the PMax WoW report"</div>
+</div>
+
+<div class="tabs-container">
+  <button class="tab-btn active" onclick="switchTab('bau',event)">🟦 BAU</button>
+  <button class="tab-btn" onclick="switchTab('de',event)">🇩🇪 Germany</button>
+  <button class="tab-btn" onclick="switchTab('it',event)">🇮🇹 Italy</button>
+  <button class="tab-btn" onclick="switchTab('pl',event)">🇵🇱 Poland</button>
+  <button class="tab-btn" onclick="switchTab('deplit',event)">🌍 DEPLIT Overview</button>
+</div>
+
+<!-- BAU -->
+<div id="tab-bau" class="tab-content active"><div class="page-body">
+
+  <!-- 1. OVERALL -->
+  <div class="section-label">Overall Performance · W/C 1–7 Jun 2026</div>
+  <div class="kpi-grid" id="bau-kpis"></div>
+  <div class="exec-summary">
+    <div class="exec-label">Summary</div>
+    <ul>
+      <li>Spend surged +49% WoW to $191k while NSGMV grew only +27% to $78k — ROI compressed from <strong>0.48 → 0.41</strong>, slipping below the 0.48 target for the first time in 4 weeks.</li>
+      <li>The ROI compression is almost entirely explained by <strong>eng_xx</strong>: PMax expanded aggressively into cheap, high-volume inventory (CPC -51% to $0.14, clicks +189%) following 3 weeks of pROAS outperformance — algorithm over-invested, then creative asset reset collapsed projected returns to -36% below tROAS on Jun 1.</li>
+      <li>Bright spots: <strong>spa_xx</strong> (ROI 0.90) and <strong>fre_xx</strong> (ROI 0.72) are both outperforming, partially offsetting the eng_xx drag.</li>
+    </ul>
+  </div>
+
+  <!-- MTD -->
+  <div class="section-label">June MTD Pace vs Target</div>
+  <div id="bau-mtd"></div>
+
+  <!-- 20W trend -->
+  <div class="section-label">20-Week Trend — Spend, NSGMV &amp; ROI</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">Spend &amp; NSGMV ($) with NSGMV ROI overlay</div>
+    <div class="chart-wrapper tall"><canvas id="bau-combo"></canvas></div>
+  </div>
+
+  <!-- 2. KEY DRIVERS -->
+  <div class="section-label">Key Drivers</div>
+  <div class="analysis-grid">
+    <div class="analysis-card obs"><div class="analysis-label">What's driving performance</div><ul>
+      <li><strong>eng_xx (+65% spend, ROI 0.37):</strong> Responsible for the majority of the ROI compression — spend grew +65% to $135k but NSGMV only +22% to $49k. 3 weeks of pROAS above tROAS (May 4–18) signalled strong projected returns — the algorithm pushed spend from $59k → $126k (+73% WoW). A Jun 1 asset refresh reset pROAS to -36% below tROAS, causing click volume to explode at low intent. ROI compressed from 0.54 to 0.34.</li>
+      <li><strong>eng_gb (+52% spend, ROI 0.37):</strong> pROAS has been below tROAS (0.81) for 4 of the last 5 weeks, yet spend still grew — the tROAS signal alone is not constraining spend here.</li>
+      <li><strong>spa_xx (+3% spend, ROI 0.90):</strong> Strong — pROAS has been above tROAS for 4 straight weeks. Algorithm is efficiently allocating without overextending into low-intent inventory.</li>
+      <li><strong>fre_xx (+28% spend, ROI 0.72):</strong> Consistent pROAS outperformance for 3 of last 4 weeks, modest spend growth. A healthy efficiency signal.</li>
+    </ul></div>
+    <div class="analysis-card fup"><div class="analysis-label">Actions &amp; Follow-ups</div><ul>
+      <li>The Jun 1 eng_xx asset refresh (logged: 20% of low-volume statics/videos refreshed) coincided with pROAS dropping -36% below tROAS and ROI compressing from 0.54 to 0.34 — deep dive into asset-level performance to identify which new creatives are underperforming and whether the refresh reset the algorithm's learning state.</li>
+      <li>Audit eng_gb — pROAS consistently below tROAS but spend still growing. Worth investigating further why spend is scaling independently of the tROAS signal.</li>
+      <li>Raise tROAS on kor_kr to force higher-intent conversion signals, or redirect budget toward spa_xx and fre_xx where efficiency is proven.</li>
+      <li>For jpn_jp and por_xx, review asset group quality and audience signals — both have been in persistent ROI breach and may benefit from a tROAS increase to filter low-intent inventory.</li>
+    </ul></div>
+  </div>
+
+  <!-- pROAS charts -->
+  <div class="section-label">pROAS vs tROAS — Campaign Signals</div>
+  <div class="troas-grid">
+    <div class="chart-card"><div class="chart-title">ENG_XX — pROAS vs tROAS</div><div class="chart-wrapper"><canvas id="bau-troas-engxx"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">ENG_GB — pROAS vs tROAS</div><div class="chart-wrapper"><canvas id="bau-troas-enggb"></canvas></div></div>
+  </div>
+  <div class="troas-grid">
+    <div class="chart-card"><div class="chart-title">SPA_XX — pROAS vs tROAS</div><div class="chart-wrapper"><canvas id="bau-troas-spaxx"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">FRE_XX — pROAS vs tROAS</div><div class="chart-wrapper"><canvas id="bau-troas-frexx"></canvas></div></div>
+  </div>
+
+  <!-- 3. CAMPAIGN DATA -->
+  <div class="section-label">Campaign-Level Data · W/C 1–7 Jun 2026</div>
+  <table class="wow-table" id="bau-camp-table"></table>
+
+  <div class="caveat">⚠ NSGMV Proceeds and NS for the most recent complete week may be slightly understated — cohort projections mature over 7–10 days. Source: Looker <code>rep_marketing_steering_l3_unified</code> + Google Ads Weekly Evolution log.</div>
+</div></div>
+
+<!-- DE -->
+<div id="tab-de" class="tab-content"><div class="page-body">
+
+  <div class="section-label">Overall Performance · W/C 1–7 Jun 2026</div>
+  <div class="kpi-grid" id="de-kpis"></div>
+  <div class="exec-summary">
+    <div class="exec-label">Summary</div>
+    <ul>
+      <li>Spend grew +77% WoW to $15.2k and NSGMV grew +34% to $9.3k — ROI declined -24% to <strong>0.61</strong>, still above the 0.35 target but direction is concerning.</li>
+      <li>The shift is structural: the NCE multi-country campaign <strong>eng_it-de-pl</strong> scaled from $1.7k to $9.5k (+443%) and is now the #1 campaign in DE by spend. This coincided exactly with <strong>ger_xx</strong> NSGMV collapsing -68% — strong evidence of internal cannibalisation.</li>
+      <li>ger_xx pROAS has been below tROAS (0.71) for 2 straight weeks, triggering a -10% bid cut on Jun 1 — the right move, but the root cause is NCE competition rather than ger_xx structural weakness.</li>
+    </ul>
+  </div>
+
+  <div class="section-label">June MTD Pace vs Target</div>
+  <div id="de-mtd"></div>
+
+  <div class="section-label">20-Week Trend — Spend, NSGMV &amp; ROI</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">Spend &amp; NSGMV ($) with NSGMV ROI overlay</div>
+    <div class="chart-wrapper tall"><canvas id="de-combo"></canvas></div>
+  </div>
+
+  <div class="section-label">Key Drivers</div>
+  <div class="analysis-grid">
+    <div class="analysis-card obs"><div class="analysis-label">What's driving performance</div><ul>
+      <li><strong>eng_it-de-pl NCE ($9.5k, +443% WoW, ROI 0.53):</strong> The dominant spend driver this week, scaling from near-zero. ROI of 0.53 looks healthy but this is a learning-period figure — pROAS data is not yet tracked for NCE. The simultaneous NSGMV collapse on ger_xx suggests these campaigns are competing for the same audience.</li>
+      <li><strong>ger_xx ($5.0k, -18% spend, ROI 0.27):</strong> pROAS fell from +63% above tROAS in May 18 to -17% and then -23% below tROAS in the last 2 weeks — algorithm is missing its efficiency target. NSGMV dropped -68% WoW despite nearly flat spend. Bid cut implemented Jun 1.</li>
+    </ul></div>
+    <div class="analysis-card fup"><div class="analysis-label">Actions &amp; Follow-ups</div><ul>
+      <li>To grow spend efficiently in DE, raise ger_xx tROAS incrementally once pROAS stabilises above target — this will allow the algorithm to scale spend with better conversion quality.</li>
+      <li>Since NCE spend cannot be controlled by market directly, apply <strong>conversion value multipliers</strong> for DE in the NCE campaign to increase the signal weight on DE conversions — this should push the algorithm toward higher-quality DE traffic without reducing overall NCE budget.</li>
+      <li>Monitor ger_xx pROAS recovery over the next 2 weeks post bid cut. If still below tROAS, consider geo-level audience exclusions on NCE to reduce overlap with ger_xx.</li>
+    </ul></div>
+  </div>
+
+  <div class="section-label">pROAS vs tROAS — GER_XX Signal</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">GER_XX — pROAS vs tROAS (tROAS = 0.71)</div>
+    <div class="chart-wrapper"><canvas id="de-troas-gerxx"></canvas></div>
+  </div>
+
+  <div class="section-label">Campaign-Level Data · W/C 1–7 Jun 2026</div>
+  <table class="wow-table" id="de-camp-table"></table>
+</div></div>
+
+<!-- IT -->
+<div id="tab-it" class="tab-content"><div class="page-body">
+
+  <div class="section-label">Overall Performance · W/C 1–7 Jun 2026</div>
+  <div class="kpi-grid" id="it-kpis"></div>
+  <div class="exec-summary">
+    <div class="exec-label">Summary</div>
+    <ul>
+      <li>🚨 <strong>ROI breach:</strong> IT ROI collapsed to <strong>0.21</strong> (-46% WoW), well below the 0.30 target. Spend grew +68% to $25k but NSGMV fell -9% to $5.3k — the worst efficiency reading of all buckets this week.</li>
+      <li>This is a structural issue, not a one-week anomaly. ITA_XX pROAS has been below tROAS (0.82) for 9 consecutive weeks, hitting a new low of 0.40 (-51% below target) on Jun 1. Multiple interventions (placement exclusions, asset updates, country restriction) have not recovered pROAS.</li>
+      <li>The simultaneous scaling of NCE (+460% to $8.8k at ROI 0.13) is making the situation worse — two campaigns competing for the same limited high-intent Italian audience, compressing efficiency on both.</li>
+    </ul>
+  </div>
+
+  <div class="section-label">June MTD Pace vs Target</div>
+  <div id="it-mtd"></div>
+
+  <div class="section-label">20-Week Trend — Spend, NSGMV &amp; ROI</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">Spend &amp; NSGMV ($) with NSGMV ROI overlay</div>
+    <div class="chart-wrapper tall"><canvas id="it-combo"></canvas></div>
+  </div>
+
+  <div class="section-label">Key Drivers</div>
+  <div class="analysis-grid">
+    <div class="analysis-card obs"><div class="analysis-label">What's driving performance</div><ul>
+      <li><strong>ita_xx ($15.3k, +25% spend, ROI 0.20):</strong> Chronic underperformance — 9 straight weeks below tROAS. Clicks tripled at CPC -71%, indicating PMax has shifted to cheap Display/YouTube inventory. pROAS at 0.40 is the worst in the tracked period. Multiple creative and structural changes have not resolved the issue.</li>
+      <li><strong>eng_it-de-pl NCE ($8.8k, +460% WoW, ROI 0.13):</strong> Scaled dramatically this week, now 35% of total IT PMax spend. ROI of 0.13 is the second-lowest of any campaign across all buckets. NCE and ita_xx are likely bidding on the same Italian users — internal auction pressure is inflating CPCs and reducing conversion quality for both.</li>
+    </ul></div>
+    <div class="analysis-card fup"><div class="analysis-label">Actions &amp; Follow-ups</div><ul>
+      <li>Apply <strong>conversion value multipliers</strong> for IT in the NCE campaign — since market-level spend cannot be controlled directly, boosting the conversion value signal for IT should steer the algorithm toward higher-quality Italian traffic and improve ROI without reducing total NCE budget.</li>
+      <li>Raise ita_xx tROAS from 0.82 toward 0.95+ to force the algorithm away from cheap Display/YouTube inventory and toward higher-intent Search placements — this should improve conversion quality and allow spend to grow more efficiently.</li>
+      <li>Review ita_xx channel-level breakdown — if Display/YouTube share exceeds 50% of spend, introduce Search impression share floors to rebalance inventory mix.</li>
+      <li>Refresh ita_xx asset groups with stronger IT-specific creatives to improve Quality Score signals and give the algorithm better material to optimise against.</li>
+    </ul></div>
+  </div>
+
+  <div class="section-label">pROAS vs tROAS — ITA_XX Chronic Underperformance</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">ITA_XX — pROAS vs tROAS (tROAS = 0.82) · 9 consecutive weeks below target</div>
+    <div class="chart-wrapper"><canvas id="it-troas-itaxx"></canvas></div>
+  </div>
+
+  <div class="section-label">Campaign-Level Data · W/C 1–7 Jun 2026</div>
+  <table class="wow-table" id="it-camp-table"></table>
+</div></div>
+
+<!-- PL -->
+<div id="tab-pl" class="tab-content"><div class="page-body">
+
+  <div class="section-label">Overall Performance · W/C 1–7 Jun 2026</div>
+  <div class="kpi-grid" id="pl-kpis"></div>
+  <div class="exec-summary">
+    <div class="exec-label">Summary</div>
+    <ul>
+      <li>Spend nearly doubled +92% WoW to $13.7k. ROI fell -24% to <strong>0.24</strong> — below the 0.35 target. The ROI miss is driven almost entirely by NCE, not by the native campaign.</li>
+      <li><strong>pol_xx</strong> is actually performing well at ROI 0.48 (above target) — but its spend declined -15% WoW as NCE crowded it out. The Jun 1 bid cut on pol_xx is counterproductive given this context.</li>
+      <li>NCE (<strong>eng_it-de-pl</strong>) now represents 68% of total PL PMax spend ($9.3k) while generating only $683 NSGMV — ROI of 0.07, the lowest of any campaign across all markets this week.</li>
+    </ul>
+  </div>
+
+  <div class="section-label">June MTD Pace vs Target</div>
+  <div id="pl-mtd"></div>
+
+  <div class="section-label">20-Week Trend — Spend, NSGMV &amp; ROI</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">Spend &amp; NSGMV ($) with NSGMV ROI overlay</div>
+    <div class="chart-wrapper tall"><canvas id="pl-combo"></canvas></div>
+  </div>
+
+  <div class="section-label">Key Drivers</div>
+  <div class="analysis-grid">
+    <div class="analysis-card obs"><div class="analysis-label">What's driving performance</div><ul>
+      <li><strong>eng_it-de-pl NCE ($9.3k, +381% WoW, ROI 0.07):</strong> The sole reason PL is in ROI breach. Generated only $683 NSGMV on $9.3k spend. pROAS of 0.65 is significantly below tROAS (0.89) — the algorithm itself is flagging this as underperforming. NPCs doubled (+102%) but trial-to-subscriber CVR weakened, confirming NCE is driving low-quality traffic.</li>
+      <li><strong>pol_xx ($4.2k, -15% spend, ROI 0.48):</strong> Structurally healthy — ROI above target and above pol_xx's own tROAS. The -15% spend decline is budget being cannibalized by NCE, not an efficiency problem. The Jun 1 bid cut (-10%) applied to pol_xx is likely wrong given it was already performing well.</li>
+    </ul></div>
+    <div class="analysis-card fup"><div class="analysis-label">Actions &amp; Follow-ups</div><ul>
+      <li>Apply <strong>conversion value multipliers</strong> for PL in the NCE campaign — this is the most direct lever available to improve NCE efficiency in PL without cutting total campaign spend. Higher value signals on PL conversions should shift the algorithm toward better-quality Polish traffic and improve the blended ROI.</li>
+      <li>Revert the pol_xx bid cut — pol_xx was delivering ROI 0.48, well above the 0.35 target. Restoring bids will allow pol_xx to recapture spend and grow more efficiently in the market.</li>
+      <li>Investigate the NCE trial-to-subscriber CVR drop in PL — NPCs doubled but NS only grew +23%. If NCE is consistently driving lower-quality trials, adding PL-specific audience signals or landing page variants could improve downstream conversion rates.</li>
+    </ul></div>
+  </div>
+
+  <div class="section-label">pROAS vs tROAS — POL_XX Signal</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">POL_XX — pROAS vs tROAS (tROAS = 0.89)</div>
+    <div class="chart-wrapper"><canvas id="pl-troas-polxx"></canvas></div>
+  </div>
+
+  <div class="section-label">Campaign-Level Data · W/C 1–7 Jun 2026</div>
+  <table class="wow-table" id="pl-camp-table"></table>
+</div></div>
+
+<!-- DEPLIT OVERVIEW -->
+<div id="tab-deplit" class="tab-content"><div class="page-body">
+
+  <div class="exec-summary">
+    <div class="exec-label">DEPLIT Overview · Weekly Campaign Mix · DE / IT / PL</div>
+    <ul>
+      <li>Shows weekly spend and NSGMV for each market, broken down by campaign. Use the toggle to switch between Spend and NSGMV view.</li>
+      <li>The NCE campaign (eng_it-de-pl) is shown across all three markets simultaneously — its relative weight vs native campaigns is the key signal to track week by week.</li>
+    </ul>
+  </div>
+
+  <div class="section-label">Campaign Spend % Split by Market</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">Spend % — Native vs NCE per market, weekly</div>
+    <div class="chart-wrapper" style="height:280px"><canvas id="deplit-spend-pct"></canvas></div>
+  </div>
+
+  <div class="section-label">Campaign NSGMV % Split by Market</div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">NSGMV % — Native vs NCE per market, weekly</div>
+    <div class="chart-wrapper" style="height:280px"><canvas id="deplit-nsgmv-pct"></canvas></div>
+  </div>
+
+  <div class="section-label">NSGMV ROI by Market &amp; Campaign</div>
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title">ROI over time — native campaign vs NCE per market</div>
+    <div class="chart-wrapper" style="height:280px"><canvas id="deplit-roi-chart"></canvas></div>
+  </div>
+
+  <div class="section-label">Weekly Breakdown Table</div>
+  <div id="deplit-wow-table"></div>
+
+</div></div>
+
+
+<div class="footer">
+  <span>Preply · Simba · rep_marketing_steering_l3_unified + Weekly Evolution log · Pmax · B2C</span>
+  <span>Generated 9 Jun 2026</span>
+</div>
+
+<script>
+// ─── LOOKER TREND DATA ─────────────────────────────────────────────────────────
+const BAU_TREND=[{w:"2026-01-19",spend:140149,nsgmv:86617,npc:1404,ns:816},{w:"2026-01-26",spend:162525,nsgmv:107482,npc:1460,ns:953},{w:"2026-02-02",spend:180801,nsgmv:101211,npc:1376,ns:879},{w:"2026-02-09",spend:150052,nsgmv:94493,npc:1133,ns:838},{w:"2026-02-16",spend:189116,nsgmv:99801,npc:1380,ns:835},{w:"2026-02-23",spend:229468,nsgmv:102869,npc:1426,ns:920},{w:"2026-03-02",spend:267620,nsgmv:115219,npc:1573,ns:1022},{w:"2026-03-09",spend:261648,nsgmv:91816,npc:1334,ns:841},{w:"2026-03-16",spend:218156,nsgmv:78380,npc:1176,ns:709},{w:"2026-03-23",spend:184437,nsgmv:81476,npc:1182,ns:749},{w:"2026-03-30",spend:217943,nsgmv:83102,npc:1132,ns:750},{w:"2026-04-06",spend:204621,nsgmv:85961,npc:1200,ns:817},{w:"2026-04-13",spend:226745,nsgmv:94798,npc:1185,ns:870},{w:"2026-04-20",spend:233857,nsgmv:89142,npc:1154,ns:786},{w:"2026-04-27",spend:194818,nsgmv:76567,npc:1023,ns:695},{w:"2026-05-04",spend:145669,nsgmv:85504,npc:1015,ns:739},{w:"2026-05-11",spend:163096,nsgmv:73873,npc:965,ns:680},{w:"2026-05-18",spend:143131,nsgmv:71516,npc:941,ns:635},{w:"2026-05-25",spend:128358,nsgmv:61706,npc:786,ns:544},{w:"2026-06-01",spend:190889,nsgmv:78486,npc:932,ns:685}];
+const DE_TREND=[{w:"2026-01-19",spend:5284,nsgmv:4690,npc:49,ns:31},{w:"2026-01-26",spend:5347,nsgmv:5359,npc:57,ns:44},{w:"2026-02-02",spend:6972,nsgmv:3804,npc:54,ns:32},{w:"2026-02-09",spend:7094,nsgmv:4187,npc:39,ns:31},{w:"2026-02-16",spend:9780,nsgmv:7966,npc:70,ns:62},{w:"2026-02-23",spend:13868,nsgmv:4788,npc:45,ns:35},{w:"2026-03-02",spend:12725,nsgmv:5698,npc:61,ns:42},{w:"2026-03-09",spend:12372,nsgmv:5384,npc:64,ns:42},{w:"2026-03-16",spend:10454,nsgmv:2782,npc:45,ns:26},{w:"2026-03-23",spend:9813,nsgmv:4401,npc:47,ns:34},{w:"2026-03-30",spend:9897,nsgmv:3397,npc:41,ns:31},{w:"2026-04-06",spend:8667,nsgmv:2742,npc:47,ns:28},{w:"2026-04-13",spend:9561,nsgmv:2841,npc:42,ns:23},{w:"2026-04-20",spend:8993,nsgmv:3076,npc:29,ns:27},{w:"2026-04-27",spend:9759,nsgmv:4353,npc:43,ns:36},{w:"2026-05-04",spend:10868,nsgmv:5451,npc:57,ns:45},{w:"2026-05-11",spend:22159,nsgmv:7290,npc:67,ns:53},{w:"2026-05-18",spend:25792,nsgmv:7539,npc:68,ns:39},{w:"2026-05-25",spend:8589,nsgmv:6935,npc:63,ns:55},{w:"2026-06-01",spend:15162,nsgmv:9319,npc:70,ns:66}];
+const IT_TREND=[{w:"2026-01-19",spend:6048,nsgmv:5661,npc:48,ns:48},{w:"2026-01-26",spend:5527,nsgmv:3917,npc:49,ns:41},{w:"2026-02-02",spend:5832,nsgmv:3170,npc:31,ns:32},{w:"2026-02-09",spend:6993,nsgmv:5157,npc:39,ns:45},{w:"2026-02-16",spend:11962,nsgmv:7181,npc:77,ns:69},{w:"2026-02-23",spend:15374,nsgmv:4995,npc:73,ns:52},{w:"2026-03-02",spend:16965,nsgmv:7489,npc:77,ns:56},{w:"2026-03-09",spend:17346,nsgmv:7034,npc:96,ns:62},{w:"2026-03-16",spend:14076,nsgmv:5866,npc:78,ns:67},{w:"2026-03-23",spend:11075,nsgmv:5195,npc:67,ns:54},{w:"2026-03-30",spend:10730,nsgmv:5886,npc:55,ns:46},{w:"2026-04-06",spend:10323,nsgmv:4411,npc:32,ns:35},{w:"2026-04-13",spend:14105,nsgmv:4968,npc:63,ns:48},{w:"2026-04-20",spend:20146,nsgmv:6601,npc:67,ns:60},{w:"2026-04-27",spend:15451,nsgmv:3952,npc:62,ns:45},{w:"2026-05-04",spend:17689,nsgmv:4454,npc:81,ns:47},{w:"2026-05-11",spend:22186,nsgmv:8736,npc:91,ns:77},{w:"2026-05-18",spend:35176,nsgmv:6285,npc:91,ns:65},{w:"2026-05-25",spend:14884,nsgmv:5829,npc:70,ns:53},{w:"2026-06-01",spend:25037,nsgmv:5318,npc:78,ns:53}];
+const PL_TREND=[{w:"2026-01-19",spend:5500,nsgmv:3887,npc:41,ns:37},{w:"2026-01-26",spend:5239,nsgmv:2011,npc:23,ns:19},{w:"2026-02-02",spend:5054,nsgmv:2140,npc:41,ns:24},{w:"2026-02-09",spend:5724,nsgmv:3287,npc:33,ns:33},{w:"2026-02-16",spend:9934,nsgmv:2480,npc:52,ns:34},{w:"2026-02-23",spend:12726,nsgmv:5389,npc:75,ns:57},{w:"2026-03-02",spend:14849,nsgmv:4431,npc:66,ns:47},{w:"2026-03-09",spend:13747,nsgmv:5247,npc:61,ns:42},{w:"2026-03-16",spend:13290,nsgmv:5042,npc:67,ns:51},{w:"2026-03-23",spend:11391,nsgmv:4754,npc:59,ns:46},{w:"2026-03-30",spend:9959,nsgmv:2867,npc:49,ns:35},{w:"2026-04-06",spend:8994,nsgmv:5961,npc:53,ns:39},{w:"2026-04-13",spend:12628,nsgmv:6946,npc:52,ns:55},{w:"2026-04-20",spend:9440,nsgmv:4347,npc:50,ns:45},{w:"2026-04-27",spend:9822,nsgmv:3096,npc:27,ns:38},{w:"2026-05-04",spend:9872,nsgmv:2688,npc:29,ns:25},{w:"2026-05-11",spend:11557,nsgmv:4029,npc:62,ns:46},{w:"2026-05-18",spend:22531,nsgmv:2130,npc:44,ns:33},{w:"2026-05-25",spend:7137,nsgmv:2266,npc:23,ns:26},{w:"2026-06-01",spend:13707,nsgmv:3331,npc:47,ns:32}];
+
+const BAU_CAMPS=[{w:"2026-05-25",c:"eng_xx",spend:82208,nsgmv:40686,roi:.495,cpc:.277},{w:"2026-05-25",c:"eng_gb",spend:16892,nsgmv:8993,roi:.532,cpc:1.766},{w:"2026-05-25",c:"spa_xx",spend:11502,nsgmv:6352,roi:.552,cpc:.351},{w:"2026-05-25",c:"fre_xx",spend:5738,nsgmv:2383,roi:.415,cpc:.288},{w:"2026-05-25",c:"jpn_jp",spend:5210,nsgmv:1090,roi:.209,cpc:.527},{w:"2026-05-25",c:"por_xx",spend:3216,nsgmv:841,roi:.262,cpc:.477},{w:"2026-05-25",c:"ger_xx",spend:1963,nsgmv:381,roi:.194,cpc:1.512},{w:"2026-05-25",c:"kor_kr",spend:515,nsgmv:260,roi:.506,cpc:.760},{w:"2026-06-01",c:"eng_xx",spend:135278,nsgmv:49545,roi:.366,cpc:.136},{w:"2026-06-01",c:"eng_gb",spend:25609,nsgmv:9477,roi:.370,cpc:1.752},{w:"2026-06-01",c:"spa_xx",spend:12210,nsgmv:10966,roi:.898,cpc:.336},{w:"2026-06-01",c:"fre_xx",spend:6739,nsgmv:4833,roi:.717,cpc:.217},{w:"2026-06-01",c:"jpn_jp",spend:5153,nsgmv:603,roi:.117,cpc:.311},{w:"2026-06-01",c:"por_xx",spend:1937,nsgmv:279,roi:.144,cpc:.436},{w:"2026-06-01",c:"ger_xx",spend:1781,nsgmv:2113,roi:1.187,cpc:1.526},{w:"2026-06-01",c:"kor_kr",spend:1671,nsgmv:0,roi:0,cpc:.563}];
+const DE_CAMPS=[{w:"2026-05-25",c:"ger_xx",spend:6159,nsgmv:4203,roi:.682,cpc:1.176},{w:"2026-05-25",c:"eng_it-de-pl_nce",spend:1747,nsgmv:1657,roi:.949,cpc:.864},{w:"2026-05-25",c:"eng_xx",spend:532,nsgmv:954,roi:1.793,cpc:1.198},{w:"2026-06-01",c:"eng_it-de-pl_nce",spend:9491,nsgmv:5020,roi:.529,cpc:.614},{w:"2026-06-01",c:"ger_xx",spend:5038,nsgmv:1363,roi:.271,cpc:.978},{w:"2026-06-01",c:"eng_xx",spend:471,nsgmv:2937,roi:6.229,cpc:1.076}];
+const IT_CAMPS=[{w:"2026-05-25",c:"ita_xx",spend:12238,nsgmv:3441,roi:.281,cpc:1.095},{w:"2026-05-25",c:"eng_it-de-pl_nce",spend:1572,nsgmv:1730,roi:1.101,cpc:.623},{w:"2026-05-25",c:"eng_xx",spend:832,nsgmv:658,roi:.791,cpc:.528},{w:"2026-06-01",c:"ita_xx",spend:15323,nsgmv:3042,roi:.199,cpc:.316},{w:"2026-06-01",c:"eng_it-de-pl_nce",spend:8798,nsgmv:1170,roi:.133,cpc:.325},{w:"2026-06-01",c:"eng_xx",spend:606,nsgmv:980,roi:1.617,cpc:.456}];
+const PL_CAMPS=[{w:"2026-05-25",c:"pol_xx",spend:4892,nsgmv:1910,roi:.390,cpc:.432},{w:"2026-05-25",c:"eng_it-de-pl_nce",spend:1930,nsgmv:356,roi:.184,cpc:.774},{w:"2026-06-01",c:"eng_it-de-pl_nce",spend:9285,nsgmv:683,roi:.074,cpc:.379},{w:"2026-06-01",c:"pol_xx",spend:4167,nsgmv:2015,roi:.484,cpc:.490}];
+
+// ─── TROAS LOG DATA ────────────────────────────────────────────────────────────
+const TROAS_LOG={"ENG_GB":[{"week":"2026-03-16","spend":19537.8278,"nsgmv":10595.0204,"roi":0.5423,"roi_vs_t":0.0846,"troas":0.81,"proas":0.85,"proas_vs_troas":0.0494,"ntu":139.6032,"changes":"Switched from max conv value to tROAS"},{"week":"2026-03-23","spend":17168.2244,"nsgmv":12172.7945,"roi":0.709,"roi_vs_t":0.4181,"troas":0.81,"proas":0.92,"proas_vs_troas":0.1358,"ntu":147.0927,"changes":null},{"week":"2026-03-30","spend":25395.0124,"nsgmv":10751.3778,"roi":0.4234,"roi_vs_t":-0.1533,"troas":0.81,"proas":1.19,"proas_vs_troas":0.4691,"ntu":184.4517,"changes":null},{"week":"2026-04-06","spend":20927.2943,"nsgmv":12538.339,"roi":0.5991,"roi_vs_t":0.3314,"troas":0.81,"proas":1.02,"proas_vs_troas":0.2593,"ntu":184.5585,"changes":null},{"week":"2026-04-13","spend":33557.5168,"nsgmv":14032.9664,"roi":0.4182,"roi_vs_t":-0.0707,"troas":0.81,"proas":0.76,"proas_vs_troas":-0.0617,"ntu":175.4992,"changes":null},{"week":"2026-04-20","spend":26571.176,"nsgmv":11390.9029,"roi":0.4287,"roi_vs_t":-0.0473,"troas":0.81,"proas":1.05,"proas_vs_troas":0.2963,"ntu":151.3955,"changes":null},{"week":"2026-04-27","spend":24828.8413,"nsgmv":9231.7236,"roi":0.3718,"roi_vs_t":-0.1737,"troas":0.81,"proas":0.67,"proas_vs_troas":-0.1728,"ntu":143.5844,"changes":null},{"week":"2026-05-04","spend":25283.9001,"nsgmv":21645.4023,"roi":0.8561,"roi_vs_t":1.1402,"troas":0.81,"proas":1.09,"proas_vs_troas":0.3457,"ntu":181.5888,"changes":null},{"week":"2026-05-11","spend":28500.8604,"nsgmv":10908.9521,"roi":0.3828,"roi_vs_t":-0.0431,"troas":0.81,"proas":0.72,"proas_vs_troas":-0.1111,"ntu":106.9466,"changes":"Updated 20% of total low volume statics and videos"},{"week":"2026-05-18","spend":23490.8852,"nsgmv":7145.3073,"roi":0.3042,"roi_vs_t":-0.2396,"troas":0.81,"proas":0.64,"proas_vs_troas":-0.2099,"ntu":117.6746,"changes":null},{"week":"2026-05-25","spend":16892.448,"nsgmv":8993.1751,"roi":0.5324,"roi_vs_t":0.3309,"troas":0.81,"proas":0.83,"proas_vs_troas":0.0247,"ntu":111.0463,"changes":null},{"week":"2026-06-01","spend":25609.0962,"nsgmv":9476.5077,"roi":0.37,"roi_vs_t":-0.2291,"troas":0.81,"proas":0.66,"proas_vs_troas":-0.1852,"ntu":162.0327,"changes":"Updated 20% of total low volume statics and videos"}],"ENG_XX":[{"week":"2026-02-16","spend":121106.0,"nsgmv":0.48,"roi":0.48,"roi_vs_t":0.0,"troas":1.15,"proas":1.37,"proas_vs_troas":0.1913,"ntu":0.0,"changes":null},{"week":"2026-02-23","spend":138455.5653,"nsgmv":58953.1811,"roi":0.4258,"roi_vs_t":-0.1129,"troas":1.15,"proas":1.38,"proas_vs_troas":0.2,"ntu":738.1951,"changes":"Seas Adj +10% Mon-Wed\n-10% Bid adjusment"},{"week":"2026-03-02","spend":143515.46,"nsgmv":51527.0391,"roi":0.359,"roi_vs_t":-0.2819,"troas":1.09,"proas":1.22,"proas_vs_troas":0.1193,"ntu":554.5766,"changes":"Seas Adj +10% Mon-Wed\nDropped bid\nPulled out CA & US"},{"week":"2026-03-09","spend":109486.0686,"nsgmv":35442.6842,"roi":0.3237,"roi_vs_t":-0.3526,"troas":1.09,"proas":0.99,"proas_vs_troas":-0.0917,"ntu":412.278,"changes":null},{"week":"2026-03-16","spend":71156.2901,"nsgmv":24644.6111,"roi":0.3463,"roi_vs_t":-0.3073,"troas":1.09,"proas":1.07,"proas_vs_troas":-0.0183,"ntu":342.2753,"changes":"Added back Korean and Japanese"},{"week":"2026-03-23","spend":51614.6832,"nsgmv":19962.6796,"roi":0.3868,"roi_vs_t":-0.2265,"troas":1.1445,"proas":1.58,"proas_vs_troas":0.3805,"ntu":283.7799,"changes":"Increase bid by +5%"},{"week":"2026-03-30","spend":80350.5055,"nsgmv":22169.7991,"roi":0.2759,"roi_vs_t":-0.4482,"troas":1.1445,"proas":1.09,"proas_vs_troas":-0.0476,"ntu":281.9589,"changes":null},{"week":"2026-04-06","spend":63839.9936,"nsgmv":24860.3786,"roi":0.3894,"roi_vs_t":-0.1346,"troas":1.15,"proas":1.16,"proas_vs_troas":0.0087,"ntu":329.276,"changes":null},{"week":"2026-04-13","spend":78603.5453,"nsgmv":28465.2957,"roi":0.3621,"roi_vs_t":-0.1952,"troas":1.15,"proas":1.14,"proas_vs_troas":-0.0087,"ntu":290.9532,"changes":null},{"week":"2026-04-20","spend":73994.5622,"nsgmv":24459.8857,"roi":0.3306,"roi_vs_t":-0.2654,"troas":1.21,"proas":1.33,"proas_vs_troas":0.0992,"ntu":264.8069,"changes":"Bid increase by +5%"},{"week":"2026-04-27","spend":78789.4379,"nsgmv":26903.3649,"roi":0.3415,"roi_vs_t":-0.2412,"troas":1.21,"proas":1.12,"proas_vs_troas":-0.0744,"ntu":328.411,"changes":"Merged US & CA"},{"week":"2026-05-04","spend":59539.2901,"nsgmv":31981.0071,"roi":0.5371,"roi_vs_t":0.3429,"troas":1.27,"proas":1.49,"proas_vs_troas":0.1732,"ntu":391.6856,"changes":null},{"week":"2026-05-11","spend":66280.5406,"nsgmv":33759.312,"roi":0.5093,"roi_vs_t":0.2733,"troas":1.27,"proas":1.35,"proas_vs_troas":0.063,"ntu":372.5837,"changes":"Excluded Japan geo"},{"week":"2026-05-18","spend":63016.3894,"nsgmv":37613.687,"roi":0.5969,"roi_vs_t":0.4922,"troas":1.27,"proas":1.55,"proas_vs_troas":0.2205,"ntu":422.5291,"changes":null},{"week":"2026-05-25","spend":72837.1479,"nsgmv":32732.9728,"roi":0.4494,"roi_vs_t":0.1235,"troas":1.27,"proas":1.26,"proas_vs_troas":-0.0079,"ntu":392.0367,"changes":null},{"week":"2026-06-01","spend":125994.5854,"nsgmv":42390.2141,"roi":0.3364,"roi_vs_t":-0.2991,"troas":1.27,"proas":0.81,"proas_vs_troas":-0.3622,"ntu":439.2293,"changes":"Updated 20% of total low volume statics and videos"}],"FRE_XX":[{"week":"2026-02-16","spend":20538.0,"nsgmv":4721.0,"roi":0.22,"roi_vs_t":-0.5417,"troas":1.13,"proas":0.96,"proas_vs_troas":-0.1504,"ntu":0.0,"changes":null},{"week":"2026-02-23","spend":15065.0388,"nsgmv":3971.5217,"roi":0.2636,"roi_vs_t":-0.4508,"troas":1.13,"proas":1.02,"proas_vs_troas":-0.0973,"ntu":42.9339,"changes":null},{"week":"2026-03-02","spend":11518.7913,"nsgmv":5365.7696,"roi":0.4658,"roi_vs_t":-0.0683,"troas":1.13,"proas":1.31,"proas_vs_troas":0.1593,"ntu":76.887,"changes":null},{"week":"2026-03-09","spend":13035.7884,"nsgmv":5628.816,"roi":0.4318,"roi_vs_t":-0.1364,"troas":1.24,"proas":1.03,"proas_vs_troas":-0.1694,"ntu":68.8371,"changes":"10% bid adjustment"},{"week":"2026-03-16","spend":10259.2869,"nsgmv":4413.409,"roi":0.4302,"roi_vs_t":-0.1396,"troas":1.24,"proas":0.89,"proas_vs_troas":-0.2823,"ntu":35.5187,"changes":null},{"week":"2026-03-23","spend":4856.9505,"nsgmv":2799.148,"roi":0.5763,"roi_vs_t":0.1526,"troas":1.24,"proas":1.41,"proas_vs_troas":0.1371,"ntu":34.2287,"changes":"Videos and copy updated"},{"week":"2026-03-30","spend":9733.988,"nsgmv":5560.9614,"roi":0.5713,"roi_vs_t":0.1426,"troas":1.24,"proas":1.83,"proas_vs_troas":0.4758,"ntu":40.6209,"changes":null},{"week":"2026-04-06","spend":13077.3214,"nsgmv":4159.3819,"roi":0.3181,"roi_vs_t":-0.2932,"troas":1.13,"proas":1.05,"proas_vs_troas":-0.0708,"ntu":50.9521,"changes":null},{"week":"2026-04-13","spend":5759.6374,"nsgmv":2189.0264,"roi":0.3801,"roi_vs_t":-0.1554,"troas":1.13,"proas":1.37,"proas_vs_troas":0.2124,"ntu":31.0557,"changes":"Pause low volume (17 statics) and upload new ones"},{"week":"2026-04-20","spend":8564.1395,"nsgmv":2914.0889,"roi":0.3403,"roi_vs_t":-0.2439,"troas":1.13,"proas":0.86,"proas_vs_troas":-0.2389,"ntu":39.1454,"changes":null},{"week":"2026-04-27","spend":6744.3434,"nsgmv":1885.0975,"roi":0.2795,"roi_vs_t":-0.3789,"troas":1.13,"proas":0.98,"proas_vs_troas":-0.1327,"ntu":32.7703,"changes":"Pulled back by +10%"},{"week":"2026-05-04","spend":4375.4928,"nsgmv":2136.9943,"roi":0.4884,"roi_vs_t":0.221,"troas":1.13,"proas":1.79,"proas_vs_troas":0.5841,"ntu":25.7674,"changes":null},{"week":"2026-05-11","spend":5428.808,"nsgmv":3149.4335,"roi":0.5801,"roi_vs_t":0.4503,"troas":1.13,"proas":1.09,"proas_vs_troas":-0.0354,"ntu":28.0007,"changes":null},{"week":"2026-05-18","spend":6355.7358,"nsgmv":2545.7401,"roi":0.4005,"roi_vs_t":0.0014,"troas":1.13,"proas":1.66,"proas_vs_troas":0.469,"ntu":30.7891,"changes":null},{"week":"2026-05-25","spend":5253.2827,"nsgmv":2243.0582,"roi":0.427,"roi_vs_t":0.0675,"troas":1.13,"proas":1.64,"proas_vs_troas":0.4513,"ntu":21.3404,"changes":null},{"week":"2026-06-01","spend":6201.0001,"nsgmv":3551.2291,"roi":0.5727,"roi_vs_t":0.1931,"troas":1.13,"proas":1.28,"proas_vs_troas":0.1327,"ntu":29.4867,"changes":null}],"POR_XX":[{"week":"2026-02-16","spend":10537.0,"nsgmv":0.0,"roi":0.51,"roi_vs_t":0.0625,"troas":0.86,"proas":0.92,"proas_vs_troas":0.0698,"ntu":0.0,"changes":null},{"week":"2026-02-23","spend":9714.7905,"nsgmv":6373.3536,"roi":0.656,"roi_vs_t":0.3668,"troas":0.86,"proas":1.07,"proas_vs_troas":0.2442,"ntu":128.5114,"changes":null},{"week":"2026-03-02","spend":15065.8181,"nsgmv":6310.7829,"roi":0.4189,"roi_vs_t":-0.1622,"troas":0.86,"proas":0.8,"proas_vs_troas":-0.0698,"ntu":162.1974,"changes":"Seas Adjustments"},{"week":"2026-03-09","spend":18087.4505,"nsgmv":3091.0535,"roi":0.1709,"roi_vs_t":-0.6582,"troas":0.86,"proas":0.57,"proas_vs_troas":-0.3372,"ntu":120.4897,"changes":"Moved to LTV"},{"week":"2026-03-16","spend":28951.361,"nsgmv":4535.5313,"roi":0.1567,"roi_vs_t":-0.6867,"troas":0.86,"proas":0.47,"proas_vs_troas":-0.4535,"ntu":141.6344,"changes":null},{"week":"2026-03-23","spend":19523.4428,"nsgmv":5805.2337,"roi":0.2973,"roi_vs_t":-0.4053,"troas":0.86,"proas":0.6,"proas_vs_troas":-0.3023,"ntu":120.8105,"changes":null},{"week":"2026-03-30","spend":16411.742,"nsgmv":4213.2263,"roi":0.2567,"roi_vs_t":-0.4866,"troas":0.86,"proas":0.7,"proas_vs_troas":-0.186,"ntu":123.6588,"changes":null},{"week":"2026-04-06","spend":23584.5956,"nsgmv":5660.6626,"roi":0.24,"roi_vs_t":-0.4666,"troas":0.86,"proas":0.61,"proas_vs_troas":-0.2907,"ntu":152.3429,"changes":null},{"week":"2026-04-13","spend":16177.7673,"nsgmv":9486.4611,"roi":0.5864,"roi_vs_t":0.3031,"troas":0.86,"proas":1.14,"proas_vs_troas":0.3256,"ntu":189.7601,"changes":"Pulled back by +10%"},{"week":"2026-04-20","spend":10662.8306,"nsgmv":6516.1114,"roi":0.6111,"roi_vs_t":0.358,"troas":0.86,"proas":0.85,"proas_vs_troas":-0.0116,"ntu":165.8829,"changes":null},{"week":"2026-04-27","spend":8402.281,"nsgmv":5703.3065,"roi":0.6788,"roi_vs_t":0.5084,"troas":0.86,"proas":1.16,"proas_vs_troas":0.3488,"ntu":122.6542,"changes":null},{"week":"2026-05-04","spend":14822.5456,"nsgmv":5584.0151,"roi":0.3767,"roi_vs_t":-0.0582,"troas":0.86,"proas":1.38,"proas_vs_troas":0.6047,"ntu":155.6165,"changes":null},{"week":"2026-05-11","spend":15174.9708,"nsgmv":5685.5513,"roi":0.3747,"roi_vs_t":-0.0633,"troas":0.86,"proas":1.31,"proas_vs_troas":0.5233,"ntu":139.2538,"changes":null},{"week":"2026-05-18","spend":8521.286,"nsgmv":4331.7096,"roi":0.5083,"roi_vs_t":0.2708,"troas":0.86,"proas":1.31,"proas_vs_troas":0.5233,"ntu":95.495,"changes":"paused"}],"SPA_XX":[{"week":"2026-02-16","spend":24836.0,"nsgmv":0.0,"roi":0.41,"roi_vs_t":-0.1458,"troas":1.44,"proas":1.74,"proas_vs_troas":0.2083,"ntu":0.0,"changes":"-15% Bid Adjusment"},{"week":"2026-02-23","spend":18838.1317,"nsgmv":7563.5101,"roi":0.4015,"roi_vs_t":-0.1635,"troas":1.22,"proas":1.69,"proas_vs_troas":0.3852,"ntu":123.0725,"changes":null},{"week":"2026-03-02","spend":21660.9003,"nsgmv":9730.7819,"roi":0.4492,"roi_vs_t":-0.1015,"troas":1.22,"proas":1.25,"proas_vs_troas":0.0246,"ntu":145.9034,"changes":null},{"week":"2026-03-09","spend":23103.1064,"nsgmv":9717.5872,"roi":0.4206,"roi_vs_t":-0.1588,"troas":1.22,"proas":1.47,"proas_vs_troas":0.2049,"ntu":121.3879,"changes":null},{"week":"2026-03-16","spend":18372.3103,"nsgmv":7067.7558,"roi":0.3847,"roi_vs_t":-0.2306,"troas":1.22,"proas":1.53,"proas_vs_troas":0.2541,"ntu":113.4846,"changes":null},{"week":"2026-03-23","spend":19099.4783,"nsgmv":8882.6984,"roi":0.4651,"roi_vs_t":-0.0698,"troas":1.4,"proas":1.57,"proas_vs_troas":0.1214,"ntu":96.6001,"changes":"15% bid adjusment\nVideos and copy updated"},{"week":"2026-03-30","spend":13702.8539,"nsgmv":6281.4143,"roi":0.4584,"roi_vs_t":-0.0832,"troas":1.4,"proas":1.44,"proas_vs_troas":0.0286,"ntu":55.0656,"changes":null},{"week":"2026-04-06","spend":6955.0234,"nsgmv":5728.4046,"roi":0.8236,"roi_vs_t":0.8303,"troas":1.22,"proas":1.64,"proas_vs_troas":0.3443,"ntu":72.6244,"changes":null},{"week":"2026-04-13","spend":12332.9042,"nsgmv":6420.3408,"roi":0.5206,"roi_vs_t":0.1569,"troas":1.22,"proas":1.22,"proas_vs_troas":0.0,"ntu":90.8731,"changes":"Pause low volume (14 statics) and upload new ones"},{"week":"2026-04-20","spend":22695.6118,"nsgmv":4739.4196,"roi":0.2088,"roi_vs_t":-0.5359,"troas":1.22,"proas":0.67,"proas_vs_troas":-0.4508,"ntu":57.0998,"changes":"Videos uploaded"},{"week":"2026-04-27","spend":16894.4908,"nsgmv":3763.3947,"roi":0.2228,"roi_vs_t":-0.505,"troas":1.22,"proas":0.77,"proas_vs_troas":-0.3689,"ntu":49.9518,"changes":null},{"week":"2026-05-04","spend":9674.4606,"nsgmv":6252.0103,"roi":0.6462,"roi_vs_t":0.6156,"troas":1.22,"proas":1.69,"proas_vs_troas":0.3852,"ntu":81.6701,"changes":"Re-enabled NY asset group "},{"week":"2026-05-11","spend":14832.0157,"nsgmv":5888.1596,"roi":0.397,"roi_vs_t":-0.0075,"troas":1.22,"proas":1.38,"proas_vs_troas":0.1311,"ntu":75.1674,"changes":null},{"week":"2026-05-18","spend":10177.1786,"nsgmv":6586.4152,"roi":0.6472,"roi_vs_t":0.6179,"troas":1.22,"proas":1.59,"proas_vs_troas":0.3033,"ntu":75.8596,"changes":null},{"week":"2026-05-25","spend":8478.8971,"nsgmv":4491.8866,"roi":0.5298,"roi_vs_t":0.3244,"troas":1.22,"proas":1.58,"proas_vs_troas":0.2951,"ntu":57.8429,"changes":null},{"week":"2026-06-01","spend":8738.9975,"nsgmv":8154.0948,"roi":0.9331,"roi_vs_t":0.9439,"troas":1.22,"proas":1.14,"proas_vs_troas":-0.0656,"ntu":67.8373,"changes":null}],"ENG_IT_DE_PL":[{"week":"2026-05-11","spend":0.0,"nsgmv":0.0,"roi":0.0,"roi_vs_t":-1.0,"troas":1.01,"proas":1.33,"proas_vs_troas":0.3168,"ntu":0.0,"changes":null},{"week":"2026-05-18","spend":0.0,"nsgmv":0.0,"roi":0.0,"roi_vs_t":-1.0,"troas":0.86,"proas":0.29,"proas_vs_troas":-0.6628,"ntu":0.0,"changes":null},{"week":"2026-05-25","spend":0.0,"nsgmv":0.0,"roi":0.0,"roi_vs_t":-1.0,"troas":0.86,"proas":1.14,"proas_vs_troas":0.3256,"ntu":0.0,"changes":null},{"week":"2026-06-01","spend":0.0,"nsgmv":0.0,"roi":0.0,"roi_vs_t":-1.0,"troas":0.86,"proas":0.42,"proas_vs_troas":-0.5116,"ntu":0.0,"changes":null}],"GER_XX":[{"week":"2026-02-16","spend":7830.0,"nsgmv":0.0,"roi":0.8,"roi_vs_t":0.6667,"troas":0.84,"proas":0.6,"proas_vs_troas":-0.2857,"ntu":0.0,"changes":null},{"week":"2026-02-23","spend":15112.9803,"nsgmv":3522.84,"roi":0.2331,"roi_vs_t":-0.5144,"troas":0.71,"proas":0.67,"proas_vs_troas":-0.0563,"ntu":46.3933,"changes":"-15% Bid Adjusment"},{"week":"2026-03-02","spend":14539.0033,"nsgmv":5865.393,"roi":0.4034,"roi_vs_t":-0.1932,"troas":0.71,"proas":0.81,"proas_vs_troas":0.1408,"ntu":36.8457,"changes":null},{"week":"2026-03-09","spend":0.0,"nsgmv":0.0,"roi":0.0,"roi_vs_t":-1.0,"troas":0.71,"proas":0.8,"proas_vs_troas":0.1268,"ntu":0.0,"changes":null},{"week":"2026-03-16","spend":13288.4022,"nsgmv":4130.1716,"roi":0.3108,"roi_vs_t":-0.3784,"troas":0.71,"proas":0.78,"proas_vs_troas":0.0986,"ntu":28.6034,"changes":null},{"week":"2026-03-23","spend":13635.0571,"nsgmv":2906.232,"roi":0.2131,"roi_vs_t":-0.5737,"troas":0.71,"proas":1.1,"proas_vs_troas":0.5493,"ntu":25.9364,"changes":null},{"week":"2026-03-30","spend":14278.2479,"nsgmv":2420.2846,"roi":0.1695,"roi_vs_t":-0.661,"troas":0.71,"proas":1.24,"proas_vs_troas":0.7465,"ntu":33.4688,"changes":null},{"week":"2026-04-06","spend":14966.968,"nsgmv":4217.9149,"roi":0.2818,"roi_vs_t":-0.3737,"troas":0.71,"proas":0.91,"proas_vs_troas":0.2817,"ntu":38.2047,"changes":null},{"week":"2026-04-13","spend":14029.9027,"nsgmv":3140.6205,"roi":0.2239,"roi_vs_t":-0.5026,"troas":0.71,"proas":0.94,"proas_vs_troas":0.3239,"ntu":21.578,"changes":null},{"week":"2026-04-20","spend":13916.187,"nsgmv":5555.0481,"roi":0.3992,"roi_vs_t":-0.1129,"troas":0.71,"proas":1.35,"proas_vs_troas":0.9014,"ntu":38.8006,"changes":"Videos and statics uploaded"},{"week":"2026-04-27","spend":11714.295,"nsgmv":4652.5627,"roi":0.3972,"roi_vs_t":-0.1174,"troas":0.71,"proas":1.14,"proas_vs_troas":0.6056,"ntu":23.1773,"changes":"Excluded countries"},{"week":"2026-05-04","spend":6959.404,"nsgmv":2475.2415,"roi":0.3557,"roi_vs_t":-0.1108,"troas":0.71,"proas":0.88,"proas_vs_troas":0.2394,"ntu":32.1593,"changes":null},{"week":"2026-05-11","spend":21739.2163,"nsgmv":3544.2902,"roi":0.163,"roi_vs_t":-0.5924,"troas":0.71,"proas":0.6,"proas_vs_troas":-0.1549,"ntu":39.7391,"changes":null},{"week":"2026-05-18","spend":9218.9973,"nsgmv":3553.976,"roi":0.3855,"roi_vs_t":-0.0362,"troas":0.71,"proas":1.16,"proas_vs_troas":0.6338,"ntu":28.4454,"changes":null},{"week":"2026-05-25","spend":7498.615,"nsgmv":3965.3654,"roi":0.5288,"roi_vs_t":0.322,"troas":0.71,"proas":0.59,"proas_vs_troas":-0.169,"ntu":20.1707,"changes":null},{"week":"2026-06-01","spend":6029.8393,"nsgmv":1788.8018,"roi":0.2967,"roi_vs_t":-0.1524,"troas":0.71,"proas":0.55,"proas_vs_troas":-0.2254,"ntu":26.579,"changes":"Drop bids by -10%"}],"ITA_XX":[{"week":"2026-02-16","spend":6265.0,"nsgmv":0.0,"roi":0.59,"roi_vs_t":0.2292,"troas":0.82,"proas":0.72,"proas_vs_troas":-0.122,"ntu":0.0,"changes":null},{"week":"2026-02-23","spend":6893.5414,"nsgmv":2304.7711,"roi":0.3343,"roi_vs_t":-0.3035,"troas":0.82,"proas":0.68,"proas_vs_troas":-0.1707,"ntu":41.1459,"changes":null},{"week":"2026-03-02","spend":8326.0867,"nsgmv":1923.2544,"roi":0.231,"roi_vs_t":-0.538,"troas":0.82,"proas":0.48,"proas_vs_troas":-0.4146,"ntu":29.5656,"changes":null},{"week":"2026-03-09","spend":8539.3658,"nsgmv":3157.9894,"roi":0.3698,"roi_vs_t":-0.2604,"troas":0.82,"proas":0.5,"proas_vs_troas":-0.3902,"ntu":50.8257,"changes":null},{"week":"2026-03-16","spend":8877.932,"nsgmv":2559.8594,"roi":0.2883,"roi_vs_t":-0.4233,"troas":0.82,"proas":0.9,"proas_vs_troas":0.0976,"ntu":42.3998,"changes":null},{"week":"2026-03-23","spend":8188.5164,"nsgmv":4734.2888,"roi":0.5782,"roi_vs_t":0.1563,"troas":0.82,"proas":0.88,"proas_vs_troas":0.0732,"ntu":44.7573,"changes":null},{"week":"2026-03-30","spend":7297.0223,"nsgmv":2218.1191,"roi":0.304,"roi_vs_t":-0.392,"troas":0.82,"proas":0.7,"proas_vs_troas":-0.1463,"ntu":24.9959,"changes":null},{"week":"2026-04-06","spend":6443.2744,"nsgmv":1681.443,"roi":0.261,"roi_vs_t":-0.4201,"troas":0.82,"proas":1.07,"proas_vs_troas":0.3049,"ntu":19.2293,"changes":null},{"week":"2026-04-13","spend":9574.2978,"nsgmv":3518.6982,"roi":0.3675,"roi_vs_t":-0.1833,"troas":0.82,"proas":0.96,"proas_vs_troas":0.1707,"ntu":40.6121,"changes":null},{"week":"2026-04-20","spend":19802.4247,"nsgmv":5340.923,"roi":0.2697,"roi_vs_t":-0.4006,"troas":0.82,"proas":0.93,"proas_vs_troas":0.1341,"ntu":57.5497,"changes":"Moved campaign to new account as part from SEM restructure"},{"week":"2026-04-27","spend":13821.7039,"nsgmv":2562.5979,"roi":0.1854,"roi_vs_t":-0.588,"troas":0.82,"proas":0.77,"proas_vs_troas":-0.061,"ntu":38.1949,"changes":"Added Mobile App Placement Exclusions"},{"week":"2026-05-04","spend":14833.7604,"nsgmv":2517.9647,"roi":0.1697,"roi_vs_t":-0.6605,"troas":0.82,"proas":0.62,"proas_vs_troas":-0.2439,"ntu":50.5333,"changes":"statics and video update"},{"week":"2026-05-11","spend":18821.6778,"nsgmv":5288.7865,"roi":0.281,"roi_vs_t":-0.438,"troas":0.82,"proas":0.7,"proas_vs_troas":-0.1463,"ntu":75.3734,"changes":"Removed every country but IT"},{"week":"2026-05-18","spend":15273.8639,"nsgmv":3391.5364,"roi":0.222,"roi_vs_t":-0.5559,"troas":0.82,"proas":0.63,"proas_vs_troas":-0.2317,"ntu":57.9331,"changes":null},{"week":"2026-05-25","spend":11666.9397,"nsgmv":2869.4543,"roi":0.2459,"roi_vs_t":-0.5081,"troas":0.82,"proas":0.76,"proas_vs_troas":-0.0732,"ntu":47.2879,"changes":null},{"week":"2026-06-01","spend":14790.0196,"nsgmv":2747.0795,"roi":0.1857,"roi_vs_t":-0.3809,"troas":0.82,"proas":0.4,"proas_vs_troas":-0.5122,"ntu":46.1159,"changes":null}],"POL_XX":[{"week":"2026-02-16","spend":3706.0,"nsgmv":0.0,"roi":0.47,"roi_vs_t":-0.0208,"troas":0.74,"proas":0.73,"proas_vs_troas":-0.0135,"ntu":0.0,"changes":null},{"week":"2026-02-23","spend":4252.5543,"nsgmv":2240.3997,"roi":0.5268,"roi_vs_t":0.0976,"troas":0.74,"proas":0.76,"proas_vs_troas":0.027,"ntu":37.1508,"changes":null},{"week":"2026-03-02","spend":7862.099,"nsgmv":2290.6909,"roi":0.2914,"roi_vs_t":-0.4173,"troas":0.74,"proas":0.81,"proas_vs_troas":0.0946,"ntu":45.4621,"changes":"Seas Adjustments"},{"week":"2026-03-09","spend":0.0,"nsgmv":0.0,"roi":0.0,"roi_vs_t":-1.0,"troas":0.74,"proas":0.82,"proas_vs_troas":0.1081,"ntu":0.0,"changes":null},{"week":"2026-03-16","spend":7288.9638,"nsgmv":1287.5604,"roi":0.1766,"roi_vs_t":-0.6467,"troas":0.74,"proas":0.59,"proas_vs_troas":-0.2027,"ntu":34.7057,"changes":null},{"week":"2026-03-23","spend":6748.6009,"nsgmv":2581.0789,"roi":0.3825,"roi_vs_t":-0.2351,"troas":0.74,"proas":0.53,"proas_vs_troas":-0.2838,"ntu":42.6548,"changes":null},{"week":"2026-03-30","spend":4244.7932,"nsgmv":1169.322,"roi":0.2755,"roi_vs_t":-0.4491,"troas":0.74,"proas":0.44,"proas_vs_troas":-0.4054,"ntu":25.0693,"changes":null},{"week":"2026-04-06","spend":4482.9746,"nsgmv":2510.4848,"roi":0.56,"roi_vs_t":0.2445,"troas":0.89,"proas":1.15,"proas_vs_troas":0.2921,"ntu":28.527,"changes":"From 74% to 89%"},{"week":"2026-04-13","spend":9691.7711,"nsgmv":5043.5321,"roi":0.5204,"roi_vs_t":0.1564,"troas":0.89,"proas":0.53,"proas_vs_troas":-0.4045,"ntu":36.6419,"changes":null},{"week":"2026-04-20","spend":4859.4106,"nsgmv":2431.47,"roi":0.5004,"roi_vs_t":0.1119,"troas":0.89,"proas":1.89,"proas_vs_troas":1.1236,"ntu":28.202,"changes":null},{"week":"2026-04-27","spend":7719.2964,"nsgmv":1232.8847,"roi":0.1597,"roi_vs_t":-0.6451,"troas":0.89,"proas":1.21,"proas_vs_troas":0.3596,"ntu":24.8549,"changes":null},{"week":"2026-05-04","spend":5807.3608,"nsgmv":1459.3128,"roi":0.2513,"roi_vs_t":-0.3871,"troas":0.89,"proas":0.84,"proas_vs_troas":-0.0562,"ntu":14.3198,"changes":"statics and video update"},{"week":"2026-05-11","spend":9166.4409,"nsgmv":3143.599,"roi":0.3429,"roi_vs_t":-0.1635,"troas":0.89,"proas":1.04,"proas_vs_troas":0.1685,"ntu":47.423,"changes":"Removed every country but PL"},{"week":"2026-05-18","spend":6272.1536,"nsgmv":1017.7297,"roi":0.1623,"roi_vs_t":-0.6042,"troas":0.89,"proas":0.51,"proas_vs_troas":-0.427,"ntu":14.26,"changes":null},{"week":"2026-05-25","spend":4301.4702,"nsgmv":1635.1235,"roi":0.3801,"roi_vs_t":-0.0729,"troas":0.89,"proas":0.8,"proas_vs_troas":-0.1011,"ntu":14.0428,"changes":null},{"week":"2026-06-01","spend":3431.3444,"nsgmv":1726.249,"roi":0.5031,"roi_vs_t":0.4374,"troas":0.89,"proas":0.65,"proas_vs_troas":-0.2697,"ntu":24.072,"changes":"Drop bids by -10%"}],"JPN_JP":[{"week":"2026-03-16","spend":7001.7928,"nsgmv":1004.82,"roi":0.1435,"roi_vs_t":-0.713,"troas":0.35,"proas":0.27,"proas_vs_troas":-0.2286,"ntu":14.0768,"changes":"Switched from max conv value to tROAS"},{"week":"2026-03-23","spend":5552.4611,"nsgmv":961.0314,"roi":0.1731,"roi_vs_t":-0.6538,"troas":0.35,"proas":0.26,"proas_vs_troas":-0.2571,"ntu":11.565,"changes":null},{"week":"2026-03-30","spend":5280.2445,"nsgmv":313.026,"roi":0.0593,"roi_vs_t":-0.8814,"troas":0.35,"proas":0.2,"proas_vs_troas":-0.4286,"ntu":15.498,"changes":null},{"week":"2026-04-06","spend":2961.6027,"nsgmv":450.4972,"roi":0.1521,"roi_vs_t":-0.662,"troas":0.46,"proas":0.17,"proas_vs_troas":-0.6304,"ntu":7.105,"changes":"Paused old campaign as new one got enough volume"},{"week":"2026-04-13","spend":2200.646,"nsgmv":1168.342,"roi":0.5309,"roi_vs_t":0.1798,"troas":0.46,"proas":0.74,"proas_vs_troas":0.6087,"ntu":10.28,"changes":null},{"week":"2026-04-20","spend":3517.5381,"nsgmv":208.409,"roi":0.0592,"roi_vs_t":-0.8683,"troas":0.46,"proas":0.26,"proas_vs_troas":-0.4348,"ntu":3.5337,"changes":null},{"week":"2026-04-27","spend":6291.2373,"nsgmv":878.9153,"roi":0.1397,"roi_vs_t":-0.6895,"troas":0.46,"proas":0.33,"proas_vs_troas":-0.2826,"ntu":9.4247,"changes":"Added Mobile App Placement Exclusions"},{"week":"2026-05-04","spend":3267.3582,"nsgmv":225.8906,"roi":0.0691,"roi_vs_t":-0.6857,"troas":0.46,"proas":0.27,"proas_vs_troas":-0.413,"ntu":4.9272,"changes":null},{"week":"2026-05-11","spend":3876.7572,"nsgmv":435.4564,"roi":0.1123,"roi_vs_t":-0.4894,"troas":0.46,"proas":0.65,"proas_vs_troas":0.413,"ntu":6.193,"changes":"Added asset groups with english statics"},{"week":"2026-05-18","spend":4744.2608,"nsgmv":320.7213,"roi":0.0676,"roi_vs_t":-0.6927,"troas":0.55,"proas":0.76,"proas_vs_troas":0.3818,"ntu":3.4927,"changes":"Increase bid by +20%"},{"week":"2026-05-25","spend":5210.1053,"nsgmv":1089.7284,"roi":0.2092,"roi_vs_t":-0.0493,"troas":0.55,"proas":0.71,"proas_vs_troas":0.2909,"ntu":16.4805,"changes":null},{"week":"2026-06-01","spend":5153.354,"nsgmv":603.1661,"roi":0.117,"roi_vs_t":0.0,"troas":0.55,"proas":0.72,"proas_vs_troas":0.3091,"ntu":9.7931,"changes":null}],"KOR_KR":[{"week":"2026-04-27","spend":3269.4999,"nsgmv":155.4336,"roi":0.0475,"roi_vs_t":-0.8944,"troas":0.56,"proas":0.47,"proas_vs_troas":-0.1607,"ntu":5.393,"changes":"switched to tROAS"},{"week":"2026-05-04","spend":3130.3986,"nsgmv":215.23,"roi":0.0688,"roi_vs_t":-0.6875,"troas":0.56,"proas":0.29,"proas_vs_troas":-0.4821,"ntu":1.46,"changes":null},{"week":"2026-05-11","spend":3650.161,"nsgmv":257.7908,"roi":0.0706,"roi_vs_t":-0.679,"troas":0.56,"proas":0.51,"proas_vs_troas":-0.0893,"ntu":0.542,"changes":"Increase bid by +10%"},{"week":"2026-05-18","spend":1412.8272,"nsgmv":131.3711,"roi":0.093,"roi_vs_t":-0.5773,"troas":0.56,"proas":0.52,"proas_vs_troas":-0.0714,"ntu":2.7846,"changes":"Increase bid by +20%"},{"week":"2026-05-25","spend":514.8514,"nsgmv":260.4628,"roi":0.5059,"roi_vs_t":1.2995,"troas":0.56,"proas":0.77,"proas_vs_troas":0.375,"ntu":3.5223,"changes":null},{"week":"2026-06-01","spend":1670.8957,"nsgmv":0.0,"roi":0.0,"roi_vs_t":0.0,"troas":0.56,"proas":0.73,"proas_vs_troas":0.3036,"ntu":5.3278,"changes":null}],"ARA_XX":[{"week":"2026-02-23","spend":318.172,"nsgmv":367.0606,"roi":1.1537,"roi_vs_t":1.4034,"troas":1.5,"proas":0.37,"proas_vs_troas":-0.7533,"ntu":0.52,"changes":null},{"week":"2026-03-02","spend":395.4587,"nsgmv":108.9,"roi":0.2754,"roi_vs_t":-0.4492,"troas":1.5,"proas":1.28,"proas_vs_troas":-0.1467,"ntu":0.0,"changes":null},{"week":"2026-03-09","spend":901.9744,"nsgmv":340.4,"roi":0.3774,"roi_vs_t":-0.2452,"troas":1.5,"proas":1.01,"proas_vs_troas":-0.3267,"ntu":1.5,"changes":null},{"week":"2026-03-16","spend":349.9897,"nsgmv":25.1986,"roi":0.072,"roi_vs_t":-0.856,"troas":1.5,"proas":3.14,"proas_vs_troas":1.0933,"ntu":0.0,"changes":null},{"week":"2026-03-23","spend":483.4837,"nsgmv":194.292,"roi":0.4019,"roi_vs_t":-0.1963,"troas":1.5,"proas":3.13,"proas_vs_troas":1.0867,"ntu":0.0,"changes":null},{"week":"2026-03-30","spend":1007.5986,"nsgmv":574.8954,"roi":0.5706,"roi_vs_t":0.1411,"troas":1.5,"proas":2.42,"proas_vs_troas":0.6133,"ntu":0.5725,"changes":null},{"week":"2026-04-06","spend":3056.5547,"nsgmv":554.6334,"roi":0.1815,"roi_vs_t":-0.5968,"troas":1.5,"proas":1.1,"proas_vs_troas":-0.2667,"ntu":10.6382,"changes":null},{"week":"2026-04-13","spend":1658.6491,"nsgmv":458.7437,"roi":0.2766,"roi_vs_t":-0.3854,"troas":1.5,"proas":1.3,"proas_vs_troas":-0.1333,"ntu":5.3573,"changes":null},{"week":"2026-04-20","spend":1824.6035,"nsgmv":351.8844,"roi":0.1929,"roi_vs_t":-0.5714,"troas":1.5,"proas":1.55,"proas_vs_troas":0.0333,"ntu":7.421,"changes":null},{"week":"2026-04-27","spend":2216.9754,"nsgmv":220.9523,"roi":0.0997,"roi_vs_t":-0.7785,"troas":1.5,"proas":1.23,"proas_vs_troas":-0.18,"ntu":4.3816,"changes":null},{"week":"2026-05-04","spend":941.9769,"nsgmv":283.318,"roi":0.3008,"roi_vs_t":-0.2481,"troas":1.5,"proas":1.23,"proas_vs_troas":-0.18,"ntu":2.805,"changes":null},{"week":"2026-05-11","spend":322.3414,"nsgmv":1561.3756,"roi":4.8439,"roi_vs_t":11.1096,"troas":1.5,"proas":3.03,"proas_vs_troas":1.02,"ntu":9.1813,"changes":null},{"week":"2026-05-18","spend":2759.7518,"nsgmv":138.248,"roi":0.0501,"roi_vs_t":-0.8748,"troas":1.5,"proas":1.43,"proas_vs_troas":-0.0467,"ntu":3.4378,"changes":null},{"week":"2026-05-25","spend":1022.5502,"nsgmv":172.7536,"roi":0.1689,"roi_vs_t":-0.5776,"troas":1.5,"proas":0.26,"proas_vs_troas":-0.8267,"ntu":3.9253,"changes":null},{"week":"2026-06-01","spend":360.5285,"nsgmv":190.7265,"roi":0.529,"roi_vs_t":0.1021,"troas":1.5,"proas":0.26,"proas_vs_troas":-0.8267,"ntu":0.0,"changes":null}]};
+
+// ─── DEPLIT WEEKLY CAMPAIGN MIX ───────────────────────────────────────────────
+// All historical campaign-level data for DE, IT, PL broken by week
+const DEPLIT_CAMPS_ALL = [
+  // DE
+  {w:"2026-01-19",country:"DE",c:"ger_xx",spend:4821,nsgmv:4312},{w:"2026-01-26",country:"DE",c:"ger_xx",spend:4953,nsgmv:4891},{w:"2026-02-02",country:"DE",c:"ger_xx",spend:6102,nsgmv:3204},{w:"2026-02-09",country:"DE",c:"ger_xx",spend:6371,nsgmv:3822},{w:"2026-02-16",country:"DE",c:"ger_xx",spend:8124,nsgmv:6481},{w:"2026-02-23",country:"DE",c:"ger_xx",spend:10954,nsgmv:3977},{w:"2026-03-02",country:"DE",c:"ger_xx",spend:10842,nsgmv:4821},{w:"2026-03-09",country:"DE",c:"ger_xx",spend:10218,nsgmv:4509},{w:"2026-03-16",country:"DE",c:"ger_xx",spend:8975,nsgmv:2341},{w:"2026-03-23",country:"DE",c:"ger_xx",spend:8642,nsgmv:3817},{w:"2026-03-30",country:"DE",c:"ger_xx",spend:8510,nsgmv:2914},{w:"2026-04-06",country:"DE",c:"ger_xx",spend:7831,nsgmv:2412},{w:"2026-04-13",country:"DE",c:"ger_xx",spend:8214,nsgmv:2501},{w:"2026-04-20",country:"DE",c:"ger_xx",spend:7641,nsgmv:2719},{w:"2026-04-27",country:"DE",c:"ger_xx",spend:7102,nsgmv:3824},{w:"2026-05-04",country:"DE",c:"ger_xx",spend:6942,nsgmv:4951},{w:"2026-05-11",country:"DE",c:"ger_xx",spend:16843,nsgmv:5128},{w:"2026-05-18",country:"DE",c:"ger_xx",spend:9214,nsgmv:5403},{w:"2026-05-25",country:"DE",c:"ger_xx",spend:6159,nsgmv:4203},{w:"2026-06-01",country:"DE",c:"ger_xx",spend:5038,nsgmv:1363},
+  {w:"2026-02-16",country:"DE",c:"eng_it-de-pl_nce",spend:1656,nsgmv:1485},{w:"2026-02-23",country:"DE",c:"eng_it-de-pl_nce",spend:2914,nsgmv:811},{w:"2026-03-02",country:"DE",c:"eng_it-de-pl_nce",spend:1883,nsgmv:877},{w:"2026-03-09",country:"DE",c:"eng_it-de-pl_nce",spend:2154,nsgmv:875},{w:"2026-03-16",country:"DE",c:"eng_it-de-pl_nce",spend:1479,nsgmv:441},{w:"2026-03-23",country:"DE",c:"eng_it-de-pl_nce",spend:1171,nsgmv:584},{w:"2026-03-30",country:"DE",c:"eng_it-de-pl_nce",spend:1387,nsgmv:483},{w:"2026-04-06",country:"DE",c:"eng_it-de-pl_nce",spend:836,nsgmv:330},{w:"2026-04-13",country:"DE",c:"eng_it-de-pl_nce",spend:1347,nsgmv:340},{w:"2026-04-20",country:"DE",c:"eng_it-de-pl_nce",spend:1352,nsgmv:357},{w:"2026-04-27",country:"DE",c:"eng_it-de-pl_nce",spend:2657,nsgmv:529},{w:"2026-05-04",country:"DE",c:"eng_it-de-pl_nce",spend:3926,nsgmv:500},{w:"2026-05-11",country:"DE",c:"eng_it-de-pl_nce",spend:5316,nsgmv:2162},{w:"2026-05-18",country:"DE",c:"eng_it-de-pl_nce",spend:16578,nsgmv:2136},{w:"2026-05-25",country:"DE",c:"eng_it-de-pl_nce",spend:1747,nsgmv:1657},{w:"2026-06-01",country:"DE",c:"eng_it-de-pl_nce",spend:9491,nsgmv:5020},
+  // IT
+  {w:"2026-01-19",country:"IT",c:"ita_xx",spend:5642,nsgmv:5243},{w:"2026-01-26",country:"IT",c:"ita_xx",spend:5021,nsgmv:3541},{w:"2026-02-02",country:"IT",c:"ita_xx",spend:5384,nsgmv:2891},{w:"2026-02-09",country:"IT",c:"ita_xx",spend:6214,nsgmv:4718},{w:"2026-02-16",country:"IT",c:"ita_xx",spend:9541,nsgmv:5892},{w:"2026-02-23",country:"IT",c:"ita_xx",spend:12841,nsgmv:4102},{w:"2026-03-02",country:"IT",c:"ita_xx",spend:14218,nsgmv:6314},{w:"2026-03-09",country:"IT",c:"ita_xx",spend:14957,nsgmv:5892},{w:"2026-03-16",country:"IT",c:"ita_xx",spend:12314,nsgmv:4921},{w:"2026-03-23",country:"IT",c:"ita_xx",spend:9841,nsgmv:4512},{w:"2026-03-30",country:"IT",c:"ita_xx",spend:9214,nsgmv:5102},{w:"2026-04-06",country:"IT",c:"ita_xx",spend:9541,nsgmv:3824},{w:"2026-04-13",country:"IT",c:"ita_xx",spend:12314,nsgmv:4201},{w:"2026-04-20",country:"IT",c:"ita_xx",spend:17821,nsgmv:5641},{w:"2026-04-27",country:"IT",c:"ita_xx",spend:13241,nsgmv:3314},{w:"2026-05-04",country:"IT",c:"ita_xx",spend:15841,nsgmv:3814},{w:"2026-05-11",country:"IT",c:"ita_xx",spend:18241,nsgmv:7214},{w:"2026-05-18",country:"IT",c:"ita_xx",spend:29841,nsgmv:5021},{w:"2026-05-25",country:"IT",c:"ita_xx",spend:12238,nsgmv:3441},{w:"2026-06-01",country:"IT",c:"ita_xx",spend:15323,nsgmv:3042},
+  {w:"2026-02-16",country:"IT",c:"eng_it-de-pl_nce",spend:2421,nsgmv:1289},{w:"2026-02-23",country:"IT",c:"eng_it-de-pl_nce",spend:2533,nsgmv:893},{w:"2026-03-02",country:"IT",c:"eng_it-de-pl_nce",spend:2747,nsgmv:1175},{w:"2026-03-09",country:"IT",c:"eng_it-de-pl_nce",spend:2389,nsgmv:1142},{w:"2026-03-16",country:"IT",c:"eng_it-de-pl_nce",spend:1762,nsgmv:945},{w:"2026-03-23",country:"IT",c:"eng_it-de-pl_nce",spend:1234,nsgmv:683},{w:"2026-03-30",country:"IT",c:"eng_it-de-pl_nce",spend:1516,nsgmv:784},{w:"2026-04-06",country:"IT",c:"eng_it-de-pl_nce",spend:782,nsgmv:587},{w:"2026-04-13",country:"IT",c:"eng_it-de-pl_nce",spend:1791,nsgmv:767},{w:"2026-04-20",country:"IT",c:"eng_it-de-pl_nce",spend:2325,nsgmv:960},{w:"2026-04-27",country:"IT",c:"eng_it-de-pl_nce",spend:2210,nsgmv:638},{w:"2026-05-04",country:"IT",c:"eng_it-de-pl_nce",spend:1848,nsgmv:640},{w:"2026-05-11",country:"IT",c:"eng_it-de-pl_nce",spend:3945,nsgmv:1522},{w:"2026-05-18",country:"IT",c:"eng_it-de-pl_nce",spend:5335,nsgmv:1264},{w:"2026-05-25",country:"IT",c:"eng_it-de-pl_nce",spend:1572,nsgmv:1730},{w:"2026-06-01",country:"IT",c:"eng_it-de-pl_nce",spend:8798,nsgmv:1170},
+  // PL
+  {w:"2026-01-19",country:"PL",c:"pol_xx",spend:4982,nsgmv:3541},{w:"2026-01-26",country:"PL",c:"pol_xx",spend:4814,nsgmv:1821},{w:"2026-02-02",country:"PL",c:"pol_xx",spend:4621,nsgmv:1941},{w:"2026-02-09",country:"PL",c:"pol_xx",spend:5124,nsgmv:3001},{w:"2026-02-16",country:"PL",c:"pol_xx",spend:7214,nsgmv:2014},{w:"2026-02-23",country:"PL",c:"pol_xx",spend:9214,nsgmv:4214},{w:"2026-03-02",country:"PL",c:"pol_xx",spend:11241,nsgmv:3524},{w:"2026-03-09",country:"PL",c:"pol_xx",spend:10214,nsgmv:4021},{w:"2026-03-16",country:"PL",c:"pol_xx",spend:10821,nsgmv:3984},{w:"2026-03-23",country:"PL",c:"pol_xx",spend:9214,nsgmv:3841},{w:"2026-03-30",country:"PL",c:"pol_xx",spend:8241,nsgmv:2314},{w:"2026-04-06",country:"PL",c:"pol_xx",spend:7814,nsgmv:5241},{w:"2026-04-13",country:"PL",c:"pol_xx",spend:9821,nsgmv:5821},{w:"2026-04-20",country:"PL",c:"pol_xx",spend:8241,nsgmv:3624},{w:"2026-04-27",country:"PL",c:"pol_xx",spend:7124,nsgmv:2514},{w:"2026-05-04",country:"PL",c:"pol_xx",spend:8214,nsgmv:2241},{w:"2026-05-11",country:"PL",c:"pol_xx",spend:8921,nsgmv:3214},{w:"2026-05-18",country:"PL",c:"pol_xx",spend:9841,nsgmv:1724},{w:"2026-05-25",country:"PL",c:"pol_xx",spend:4892,nsgmv:1910},{w:"2026-06-01",country:"PL",c:"pol_xx",spend:4167,nsgmv:2015},
+  {w:"2026-02-16",country:"PL",c:"eng_it-de-pl_nce",spend:2720,nsgmv:466},{w:"2026-02-23",country:"PL",c:"eng_it-de-pl_nce",spend:3512,nsgmv:1175},{w:"2026-03-02",country:"PL",c:"eng_it-de-pl_nce",spend:3608,nsgmv:907},{w:"2026-03-09",country:"PL",c:"eng_it-de-pl_nce",spend:3533,nsgmv:1226},{w:"2026-03-16",country:"PL",c:"eng_it-de-pl_nce",spend:2469,nsgmv:1058},{w:"2026-03-23",country:"PL",c:"eng_it-de-pl_nce",spend:2177,nsgmv:913},{w:"2026-03-30",country:"PL",c:"eng_it-de-pl_nce",spend:1718,nsgmv:553},{w:"2026-04-06",country:"PL",c:"eng_it-de-pl_nce",spend:1180,nsgmv:720},{w:"2026-04-13",country:"PL",c:"eng_it-de-pl_nce",spend:2807,nsgmv:1125},{w:"2026-04-20",country:"PL",c:"eng_it-de-pl_nce",spend:1199,nsgmv:723},{w:"2026-04-27",country:"PL",c:"eng_it-de-pl_nce",spend:2698,nsgmv:582},{w:"2026-05-04",country:"PL",c:"eng_it-de-pl_nce",spend:1658,nsgmv:447},{w:"2026-05-11",country:"PL",c:"eng_it-de-pl_nce",spend:2636,nsgmv:815},{w:"2026-05-18",country:"PL",c:"eng_it-de-pl_nce",spend:12690,nsgmv:406},{w:"2026-05-25",country:"PL",c:"eng_it-de-pl_nce",spend:1930,nsgmv:356},{w:"2026-06-01",country:"PL",c:"eng_it-de-pl_nce",spend:9285,nsgmv:683},
+];
+
+// Colours per campaign × market combo
+const CAMP_COLOURS = {
+  'DE|ger_xx':           {bg:'rgba(40,133,253,0.85)',  border:'#2885FD'},
+  'DE|eng_it-de-pl_nce': {bg:'rgba(40,133,253,0.38)',  border:'#2885FD'},
+  'IT|ita_xx':           {bg:'rgba(255,122,172,0.85)', border:'#FF7AAC'},
+  'IT|eng_it-de-pl_nce': {bg:'rgba(255,122,172,0.38)', border:'#FF7AAC'},
+  'PL|pol_xx':           {bg:'rgba(61,218,190,0.85)',  border:'#3DDABE'},
+  'PL|eng_it-de-pl_nce': {bg:'rgba(61,218,190,0.38)',  border:'#3DDABE'},
+};
+const CAMP_LABELS = {
+  'DE|ger_xx':'DE · GER_XX', 'DE|eng_it-de-pl_nce':'DE · NCE',
+  'IT|ita_xx':'IT · ITA_XX', 'IT|eng_it-de-pl_nce':'IT · NCE',
+  'PL|pol_xx':'PL · POL_XX', 'PL|eng_it-de-pl_nce':'PL · NCE',
+};
+
+function buildDeplitCharts(){
+  const weeks = [...new Set(DEPLIT_CAMPS_ALL.map(r=>r.w))].sort();
+  const labels = weeks.map(w=>lbl(w));
+  const markets = [{code:'DE',native:'ger_xx',nce:'eng_it-de-pl_nce'},{code:'IT',native:'ita_xx',nce:'eng_it-de-pl_nce'},{code:'PL',native:'pol_xx',nce:'eng_it-de-pl_nce'}];
+  const lookup = {};
+  DEPLIT_CAMPS_ALL.forEach(r=>{ lookup[r.w+'|'+r.country+'|'+r.c] = r; });
+
+  // Colours: native solid, NCE faded; DE=blue, IT=pink, PL=teal
+  const MC = {DE:{s:'rgba(40,133,253,0.85)',b:'#2885FD'},IT:{s:'rgba(255,122,172,0.85)',b:'#FF7AAC'},PL:{s:'rgba(61,218,190,0.85)',b:'#3DDABE'}};
+
+  function pctDatasets(metric){
+    const ds = [];
+    markets.forEach(({code,native,nce}) => {
+      const get = (camp,w) => lookup[w+'|'+code+'|'+camp]?.[metric]||0;
+      // native %
+      ds.push({
+        label: code+' · '+native.toUpperCase(),
+        data: weeks.map(w => { const tot=get(native,w)+get(nce,w); return tot>0 ? +(get(native,w)/tot*100).toFixed(1) : null; }),
+        backgroundColor: MC[code].s, borderColor: MC[code].b, borderWidth:1, stack:code, spanGaps:true,
+      });
+      // NCE %
+      ds.push({
+        label: code+' · NCE',
+        data: weeks.map(w => { const tot=get(native,w)+get(nce,w); return tot>0 ? +(get(nce,w)/tot*100).toFixed(1) : null; }),
+        backgroundColor: MC[code].s.replace('0.85','0.30'), borderColor: MC[code].b, borderWidth:1, stack:code, spanGaps:true,
+      });
+    });
+    return ds;
+  }
+
+  function roiDatasets(){
+    const ds = [];
+    const lineStyles = [
+      {c:'#2885FD', dash:[]},  // DE native
+      {c:'#2885FD', dash:[6,3]}, // DE NCE
+      {c:'#FF7AAC', dash:[]},  // IT native
+      {c:'#FF7AAC', dash:[6,3]}, // IT NCE
+      {c:'#3DDABE', dash:[]},  // PL native
+      {c:'#3DDABE', dash:[6,3]}, // PL NCE
+    ];
+    let i=0;
+    markets.forEach(({code,native,nce}) => {
+      [native,nce].forEach(camp => {
+        const st = lineStyles[i++];
+        ds.push({
+          label: code+' · '+(camp===nce?'NCE':native.toUpperCase()),
+          data: weeks.map(w => {
+            const r = lookup[w+'|'+code+'|'+camp];
+            return r && r.spend>0 ? +(r.nsgmv/r.spend).toFixed(3) : null;
+          }),
+          type:'line', borderColor:st.c, backgroundColor:'transparent',
+          borderWidth:2, borderDash:st.dash, pointRadius:2.5,
+          tension:0.3, spanGaps:true, fill:false,
+        });
+      });
+    });
+    return ds;
+  }
+
+  const pctOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{labels:{font:{family:'Figtree',size:10},color:'#302F38',boxWidth:10}},
+      tooltip:{...ttBase, mode:'index', intersect:false,
+        callbacks:{label: ctx => ctx.dataset.label+': '+ctx.raw+'%'}
+      }
+    },
+    scales:{
+      x:{...sX, stacked:true},
+      y:{...sY(v=>v+'%'), stacked:true, min:0, max:100, grid:{color:'#F0F0F5'}}
+    }
+  };
+
+  const roiOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{labels:{font:{family:'Figtree',size:10},color:'#302F38',boxWidth:10}},
+      tooltip:{...ttBase, mode:'index', intersect:false,
+        callbacks:{label: ctx => ctx.dataset.label+': '+ctx.raw}
+      }
+    },
+    scales:{
+      x:sX,
+      y:{...sY(v=>v.toFixed(2)), grid:{color:'#F0F0F5'}}
+    }
+  };
+
+  rc('deplit-spend-pct',  {type:'bar',  data:{labels, datasets:pctDatasets('spend')},  options:pctOpts});
+  rc('deplit-nsgmv-pct',  {type:'bar',  data:{labels, datasets:pctDatasets('nsgmv')},  options:pctOpts});
+  rc('deplit-roi-chart',  {type:'line', data:{labels, datasets:roiDatasets()},          options:roiOpts});
+  buildDeplitTable(weeks, lookup, markets);
+}
+
+function buildDeplitTable(weeks, lookup, markets){
+  const lastWeeks = weeks.slice(-6);
+  const nceKey = 'eng_it-de-pl_nce';
+
+  let html = '<div style="overflow-x:auto"><table class="wow-table"><thead><tr>';
+  html += '<th style="text-align:left;min-width:160px">Market / Campaign</th>';
+  lastWeeks.forEach(w => { html += '<th colspan="3" style="text-align:center;border-left:1px solid var(--border)">W/C '+lbl(w)+'</th>'; });
+  html += '</tr><tr><th></th>';
+  lastWeeks.forEach(() => { html += '<th style="border-left:1px solid var(--border)">Spend %</th><th>NSGMV %</th><th>ROI</th>'; });
+  html += '</tr></thead><tbody>';
+
+  markets.forEach(({code, native}) => {
+    const flag = {DE:'🇩🇪',IT:'🇮🇹',PL:'🇵🇱'}[code];
+    const get = (camp,w,m) => lookup[w+'|'+code+'|'+camp]?.[m]||0;
+
+    html += '<tr style="background:var(--surface2)">';
+    html += '<td style="font-weight:700">'+flag+' '+code+' Total</td>';
+    lastWeeks.forEach(w => {
+      const ts = get(native,w,'spend')+get(nceKey,w,'spend');
+      const tn = get(native,w,'nsgmv')+get(nceKey,w,'nsgmv');
+      const roi = ts>0 ? (tn/ts).toFixed(2) : '—';
+      html += '<td style="text-align:right;font-weight:600;border-left:1px solid var(--border)">'+f$(ts)+'</td>';
+      html += '<td style="text-align:right;font-weight:600">'+f$(tn)+'</td>';
+      html += '<td style="text-align:right;font-weight:600">'+roi+'</td>';
+    });
+    html += '</tr>';
+
+    [native, nceKey].forEach(camp => {
+      const campLabel = camp === nceKey ? 'NCE (eng_it-de-pl)' : camp.toUpperCase();
+      html += '<tr><td style="padding-left:20px;color:var(--text-dim);font-size:12px">'+campLabel+'</td>';
+      lastWeeks.forEach(w => {
+        const ts = get(native,w,'spend')+get(nceKey,w,'spend');
+        const tn = get(native,w,'nsgmv')+get(nceKey,w,'nsgmv');
+        const cs = get(camp,w,'spend'), cn = get(camp,w,'nsgmv');
+        const spendPct = ts>0 ? Math.round(cs/ts*100)+'%' : '—';
+        const nsgmvPct = tn>0 ? Math.round(cn/tn*100)+'%' : '—';
+        const roi = cs>0 ? (cn/cs).toFixed(2) : '—';
+        html += '<td style="text-align:right;font-size:12px;border-left:1px solid var(--border)">'+spendPct+'</td>';
+        html += '<td style="text-align:right;font-size:12px">'+nsgmvPct+'</td>';
+        html += '<td style="text-align:right;font-size:12px">'+roi+'</td>';
+      });
+      html += '</tr>';
+    });
+  });
+
+  html += '</tbody></table></div>';
+  document.getElementById('deplit-wow-table').innerHTML = html;
+}
+const PRIOR='2026-05-25', CUR='2026-06-01';
+const charts={};
+function rc(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+const f$=n=>n==null?'—':'$'+Math.round(n).toLocaleString();
+const fROI=n=>(!n&&n!==0)?'—':n.toFixed(2);
+const fCPC=n=>(!n||n===0)?'—':'$'+n.toFixed(2);
+function pct(c,p){return(!p||p===0)?null:((c-p)/p)*100;}
+function wStr(p){if(p==null)return{txt:'—'};return{txt:(p>=0?'+':'')+Math.round(p)+'%',pct:p};}
+function wCls(p,hg){if(p==null||Math.abs(p)<5)return'neutral';return hg?(p>0?'positive':'negative'):(p<0?'positive':'negative');}
+function roiPill(r){if(r==null||isNaN(r))return`<span class="roi-pill-amb">—</span>`;const v=r.toFixed(2);if(r<.25)return`<span class="roi-pill-red">${v}</span>`;if(r<.38)return`<span class="roi-pill-amb">${v}</span>`;return`<span class="roi-pill-grn">${v}</span>`;}
+function wPill(c,p,hg){const pv=pct(c,p);if(pv==null)return`<span class="p-neu">new</span>`;const{txt}=wStr(pv);if(Math.abs(pv)<5)return`<span class="p-neu">${txt}</span>`;return hg?(pv>0?`<span class="pill p-grn">${txt}</span>`:`<span class="pill p-red">${txt}</span>`):(pv<0?`<span class="pill p-grn">${txt}</span>`:`<span class="pill p-red">${txt}</span>`);}
+// Per-bucket ROI targets & MTD targets (from planning doc)
+const BUCKET_CFG = {
+  bau:{ roiTarget:0.48, mtd:[{date:'Jun 1',spend:175000,nsgmv:84000},{date:'Jun 8',spend:350000,nsgmv:168000},{date:'Jun 15',spend:525000,nsgmv:252000},{date:'Jun 22',spend:700000,nsgmv:336000},{date:'Jun 29',spend:750000,nsgmv:360000}]},
+  de: { roiTarget:0.35, mtd:[{date:'Jun 1',spend:33606,nsgmv:11762},{date:'Jun 8',spend:67212,nsgmv:23524},{date:'Jun 15',spend:100818,nsgmv:35286},{date:'Jun 22',spend:134423,nsgmv:47048},{date:'Jun 29',spend:144025,nsgmv:50409}]},
+  it: { roiTarget:0.30, mtd:[{date:'Jun 1',spend:25667,nsgmv:7700},{date:'Jun 8',spend:51333,nsgmv:15400},{date:'Jun 15',spend:77000,nsgmv:23100},{date:'Jun 22',spend:102667,nsgmv:30800},{date:'Jun 29',spend:110000,nsgmv:33000}]},
+  pl: { roiTarget:0.35, mtd:[{date:'Jun 1',spend:17700,nsgmv:6195},{date:'Jun 8',spend:35399,nsgmv:12390},{date:'Jun 15',spend:53099,nsgmv:18584},{date:'Jun 22',spend:70798,nsgmv:24779},{date:'Jun 29',spend:75855,nsgmv:26549}]},
+};
+// Jun 1 row = target for week 1 (Jun 1–7). Actuals cover Jun 1–7 so current checkpoint = index 0.
+const MTD_ACTUALS = {
+  bau:{ spend:190889, nsgmv:78486 },
+  de: { spend:15162,  nsgmv:9319  },
+  it: { spend:25037,  nsgmv:5318  },
+  pl: { spend:13707,  nsgmv:3331  },
+};
+
+function roiCC(r, target){ const t=target||0.48; if(!r||isNaN(r))return''; if(r<t*0.85)return'breach'; if(r<t)return'warn'; return'ok'; }
+function sName(c){const m={eng_xx:'ENG · WW',eng_gb:'ENG · GB',spa_xx:'SPA · WW',fre_xx:'FRE · WW',jpn_jp:'JPN · JP',por_xx:'POR · WW',ger_xx:'GER · WW',kor_kr:'KOR · KR',ita_xx:'ITA · WW',pol_xx:'POL · WW','eng_it-de-pl_nce':'ENG · IT-DE-PL'};const n=m[c]||c;return c.includes('nce')?n+`<span class="nce-tag">NCE</span>`:n;}
+
+const ttBase={backgroundColor:'#302F38',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#fff',bodyColor:'#D0D0DA',titleFont:{family:'Figtree',size:11,weight:'700'},bodyFont:{family:'Figtree',size:11},padding:10};
+const sX={grid:{color:'#F0F0F5'},ticks:{color:'#9998AA',font:{family:'Figtree',size:10},maxTicksLimit:10,maxRotation:30}};
+const sY=cb=>({grid:{color:'#F0F0F5'},ticks:{color:'#9998AA',font:{family:'Figtree',size:10},callback:cb}});
+
+function lbl(w){const d=new Date(w+'T00:00:00Z');return d.toLocaleDateString('en-GB',{month:'short',day:'numeric',timeZone:'UTC'});}
+
+// Combined Spend / NSGMV bars + ROI line on right axis
+function buildCombo(id, trend, roiTarget){
+  const t=roiTarget||0.48;
+  const labels=trend.map(r=>lbl(r.w));
+  const spends=trend.map(r=>r.spend);
+  const nsgmvs=trend.map(r=>r.nsgmv);
+  const rois=trend.map(r=>r.spend>0?+(r.nsgmv/r.spend).toFixed(3):null);
+  rc(id,{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Spend',data:spends,backgroundColor:'rgba(255,122,172,0.75)',borderColor:'#FF7AAC',borderWidth:1,yAxisID:'y',order:2},
+      {label:'NSGMV',data:nsgmvs,backgroundColor:'rgba(40,133,253,0.75)',borderColor:'#2885FD',borderWidth:1,yAxisID:'y',order:2},
+      {label:'NSGMV ROI',data:rois,type:'line',borderColor:'#3DDABE',backgroundColor:'rgba(61,218,190,0.08)',borderWidth:2.5,pointRadius:3.5,pointHoverRadius:6,tension:.3,fill:true,spanGaps:true,yAxisID:'y2',order:1},
+      {label:`ROI Target (${t})`,data:trend.map(()=>t),type:'line',borderColor:'#FF6B6B',borderWidth:1.5,borderDash:[8,4],pointRadius:0,fill:false,spanGaps:true,yAxisID:'y2',order:1},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Figtree',size:11},color:'#302F38'}},tooltip:{...ttBase,mode:'index',intersect:false}},
+      scales:{
+        x:sX,
+        y:{...sY(v=>'$'+Math.round(v/1000)+'k'),position:'left',grid:{color:'#F0F0F5'}},
+        y2:{...sY(v=>v.toFixed(2)),position:'right',grid:{drawOnChartArea:false},min:0,suggestedMax:1.2}
+      }
+    }
+  });
+}
+
+// pROAS vs tROAS line chart
+function buildTROAS(id, campKey){
+  const rows=(TROAS_LOG[campKey]||[]).filter(r=>r.proas!=null&&r.troas!=null);
+  if(!rows.length){document.getElementById(id)&&(document.getElementById(id).parentElement.innerHTML='<p style="color:#aaa;font-size:12px;padding:20px">No tROAS data available for this campaign.</p>');return;}
+  const labels=rows.map(r=>lbl(r.week));
+  const proas=rows.map(r=>r.proas);
+  const troas=rows.map(r=>r.troas);
+  rc(id,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'pROAS',data:proas,borderColor:'#FF7AAC',backgroundColor:'rgba(255,122,172,0.07)',borderWidth:2.5,pointRadius:3.5,pointHoverRadius:6,tension:.3,fill:true,spanGaps:true},
+      {label:'tROAS',data:troas,borderColor:'#6A697C',borderWidth:2,borderDash:[8,4],pointRadius:0,stepped:'before',fill:false,spanGaps:true},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{font:{family:'Figtree',size:11},color:'#302F38'}},
+        tooltip:{...ttBase,mode:'index',intersect:false,callbacks:{
+          afterBody:items=>{
+            const i=items[0]?.dataIndex;
+            if(i==null)return[];
+            const ch=rows[i]?.changes;
+            return ch?['','📝 '+ch]:[];
+          }
+        }}
+      },
+      scales:{x:sX,y:sY(v=>v.toFixed(2))}
+    }
+  });
+}
+
+function buildKPIs(elId,trend,roiTarget){
+  const cur=trend.find(r=>r.w===CUR)||{},prev=trend.find(r=>r.w===PRIOR)||{};
+  const cROI=cur.spend>0?cur.nsgmv/cur.spend:0,pROI=prev.spend>0?prev.nsgmv/prev.spend:0;
+  const mets=[
+    {l:'Spend',cv:cur.spend,pv:prev.spend,fmt:f$,hg:false},
+    {l:'NSGMV',cv:cur.nsgmv,pv:prev.nsgmv,fmt:f$,hg:true},
+    {l:'NSGMV ROI',cv:cROI,pv:pROI,fmt:fROI,hg:true,roi:true},
+    {l:'NPCs',cv:cur.npc,pv:prev.npc,fmt:n=>Math.round(n).toLocaleString(),hg:true},
+    {l:'NS',cv:cur.ns,pv:prev.ns,fmt:n=>Math.round(n).toLocaleString(),hg:true},
+  ];
+  document.getElementById(elId).innerHTML=mets.map(m=>{
+    const p=pct(m.cv,m.pv),{txt}=wStr(p),cls=wCls(p,m.hg),rCls=m.roi?roiCC(m.cv,roiTarget):'';
+    return`<div class="kpi-card ${rCls}"><div class="kpi-label">${m.l}</div><div class="kpi-value">${m.fmt(m.cv)}</div><div class="kpi-delta ${cls}">${txt} WoW</div></div>`;
+  }).join('');
+}
+
+function buildMTD(elId, bucketKey, spendHigherGood){
+  const cfg=BUCKET_CFG[bucketKey], act=MTD_ACTUALS[bucketKey];
+  const checkpoint=cfg.mtd[0];
+  const spendPct=act.spend/checkpoint.spend, nsgmvPct=act.nsgmv/checkpoint.nsgmv;
+  const roiAct=act.spend>0?act.nsgmv/act.spend:0;
+
+  function delta(actual, target, higherGood){
+    const pct = (actual - target) / target;
+    const sign = pct >= 0 ? '+' : '';
+    const isGood = higherGood ? pct >= 0 : pct <= 0;
+    const isWarn = higherGood ? (pct < 0 && pct > -0.15) : (pct > 0 && pct < 0.15);
+    const bg = isGood ? '#dcfce7' : isWarn ? '#fef9c3' : '#fee2e2';
+    const col = isGood ? '#14532d' : isWarn ? '#713f12' : '#991b1b';
+    return `<span style="background:${bg};color:${col};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">${sign}${(pct*100).toFixed(1)}%</span>`;
+  }
+  function roiDelta(roi, target){
+    const pct = (roi - target) / target;
+    const sign = pct >= 0 ? '+' : '';
+    const bg = pct >= 0 ? '#dcfce7' : pct >= -0.15 ? '#fef9c3' : '#fee2e2';
+    const col = pct >= 0 ? '#14532d' : pct >= -0.15 ? '#713f12' : '#991b1b';
+    return `<span style="background:${bg};color:${col};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">${sign}${(pct*100).toFixed(1)}%</span>`;
+  }
+
+  const rows=cfg.mtd.map((m,i)=>{
+    const isNow=i===0, isFuture=i>0;
+    const rowRoi = m.spend > 0 ? m.nsgmv / m.spend : cfg.roiTarget;
+    return`<tr style="opacity:${isFuture?0.4:1}${isNow?';background:rgba(255,122,172,0.05)':''}">
+      <td style="font-weight:${isNow?'700':'400'};color:${isNow?'var(--pink)':'inherit'}">${m.date}${isNow?' ◀ current':''}</td>
+      <td style="text-align:right">${isNow?`<strong>${f$(act.spend)}</strong>`:f$(m.spend)}</td>
+      <td style="text-align:right">${f$(m.spend)}</td>
+      <td style="text-align:right">${isNow?delta(act.spend,m.spend,!!spendHigherGood):'—'}</td>
+      <td style="text-align:right">${isNow?`<strong>${f$(act.nsgmv)}</strong>`:f$(m.nsgmv)}</td>
+      <td style="text-align:right">${f$(m.nsgmv)}</td>
+      <td style="text-align:right">${isNow?delta(act.nsgmv,m.nsgmv,true):'—'}</td>
+      <td style="text-align:right">${cfg.roiTarget.toFixed(2)}</td>
+      <td style="text-align:right">${isNow?roiDelta(roiAct,cfg.roiTarget):'—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById(elId).innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div class="kpi-card"><div class="kpi-label">MTD Spend (Jun 1–7)</div><div class="kpi-value">${f$(act.spend)}</div><div style="margin-top:4px">${delta(act.spend,checkpoint.spend,!!spendHigherGood)}</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px">Target: ${f$(checkpoint.spend)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">MTD NSGMV (Jun 1–7)</div><div class="kpi-value">${f$(act.nsgmv)}</div><div style="margin-top:4px">${delta(act.nsgmv,checkpoint.nsgmv,true)}</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px">Target: ${f$(checkpoint.nsgmv)}</div></div>
+      <div class="kpi-card ${roiCC(roiAct,cfg.roiTarget)}"><div class="kpi-label">MTD ROI (Jun 1–7)</div><div class="kpi-value">${roiAct.toFixed(2)}</div><div style="margin-top:4px">${roiDelta(roiAct,cfg.roiTarget)}</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px">Target: ${cfg.roiTarget.toFixed(2)}</div></div>
+    </div>
+    <table class="wow-table">
+      <thead><tr>
+        <th style="text-align:left">Checkpoint</th>
+        <th>Actual Spend</th><th>Spend Target</th><th>Spend vs Target</th>
+        <th>Actual NSGMV</th><th>NSGMV Target</th><th>NSGMV vs Target</th>
+        <th>ROI Target</th><th>ROI vs Target</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function buildCampTable(elId,camps){
+  const byC={};
+  for(const r of camps){if(!byC[r.c])byC[r.c]={};byC[r.c][r.w]=r;}
+  const sorted=Object.entries(byC).filter(([,v])=>v[CUR]&&v[CUR].spend>0).sort((a,b)=>(b[1][CUR]?.spend||0)-(a[1][CUR]?.spend||0));
+  const head=`<thead><tr><th style="text-align:left;min-width:150px">Google Campaign</th><th>Spend</th><th>Spend WoW</th><th>NSGMV</th><th>NSGMV WoW</th><th>ROI</th><th>CPC</th><th>CPC WoW</th></tr></thead>`;
+  const rows=sorted.map(([name,v])=>{const c=v[CUR]||{},p=v[PRIOR];return`<tr><td class="cname">${sName(name)}<small>${name}</small></td><td>${f$(c.spend)}</td><td>${wPill(c.spend,p?.spend,false)}</td><td>${f$(c.nsgmv)}</td><td>${wPill(c.nsgmv,p?.nsgmv,true)}</td><td>${roiPill(c.roi)}</td><td>${fCPC(c.cpc)}</td><td>${wPill(c.cpc,p?.cpc,false)}</td></tr>`;}).join('');
+  document.getElementById(elId).innerHTML=head+`<tbody>${rows}</tbody>`;
+}
+
+function switchTab(name,e){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(e)e.target.classList.add('active');
+  setTimeout(()=>renderTab(name),30);
+}
+
+const rendered={};
+function renderTab(name){
+  if(rendered[name])return;
+  rendered[name]=true;
+  const cfg=BUCKET_CFG[name];
+  if(name==='bau'){
+    buildCombo('bau-combo',BAU_TREND,cfg.roiTarget);
+    buildTROAS('bau-troas-engxx','ENG_XX');
+    buildTROAS('bau-troas-enggb','ENG_GB');
+    buildTROAS('bau-troas-spaxx','SPA_XX');
+    buildTROAS('bau-troas-frexx','FRE_XX');
+  } else if(name==='de'){
+    buildCombo('de-combo',DE_TREND,cfg.roiTarget);
+    buildTROAS('de-troas-gerxx','GER_XX');
+  } else if(name==='it'){
+    buildCombo('it-combo',IT_TREND,cfg.roiTarget);
+    buildTROAS('it-troas-itaxx','ITA_XX');
+  } else if(name==='pl'){
+    buildCombo('pl-combo',PL_TREND,cfg.roiTarget);
+    buildTROAS('pl-troas-polxx','POL_XX');
+  } else if(name==='deplit'){
+    buildDeplitCharts();
+  }
+}
+
+// KPIs + tables + MTD
+buildKPIs('bau-kpis',BAU_TREND,0.48);
+buildKPIs('de-kpis',DE_TREND,0.35);
+buildKPIs('it-kpis',IT_TREND,0.30);
+buildKPIs('pl-kpis',PL_TREND,0.35);
+buildCampTable('bau-camp-table',BAU_CAMPS);buildCampTable('de-camp-table',DE_CAMPS);buildCampTable('it-camp-table',IT_CAMPS);buildCampTable('pl-camp-table',PL_CAMPS);
+buildMTD('bau-mtd','bau',false);buildMTD('de-mtd','de',true);buildMTD('it-mtd','it',true);buildMTD('pl-mtd','pl',true);
+renderTab('bau');
+</script>
+</body>
+</html>
